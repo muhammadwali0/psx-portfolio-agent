@@ -52,8 +52,7 @@ class Settings(BaseSettings):
     ary_business_url: str = "https://arynews.tv/category/business"
     geo_business_url: str = "https://www.geo.tv/category/business"
 
-    # ── Redis (optional — falls back to in-process cache) ───────────────────
-    redis_url: str = "redis://localhost:6379/0"
+    # ── Cache (optional — falls back to in-process cache) ───────────────────
     cache_ttl_seconds: int = 300          # 5 minutes for market data
     news_cache_ttl_seconds: int = 900     # 15 minutes for news
 
