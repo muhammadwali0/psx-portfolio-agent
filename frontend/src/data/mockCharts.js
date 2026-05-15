@@ -1,0 +1,38 @@
+export const mockChartData = {
+  portfolioGrowth: [
+    { date: 'Jan', value: 2000000, benchmark: 2000000 },
+    { date: 'Feb', value: 2045000, benchmark: 2020000 },
+    { date: 'Mar', value: 2120000, benchmark: 2065000 },
+    { date: 'Apr', value: 2080000, benchmark: 2040000 },
+    { date: 'May', value: 2190000, benchmark: 2110000 },
+    { date: 'Jun', value: 2250000, benchmark: 2130000 },
+    { date: 'Jul', value: 2180000, benchmark: 2100000 },
+    { date: 'Aug', value: 2340000, benchmark: 2180000 },
+    { date: 'Sep', value: 2290000, benchmark: 2160000 },
+    { date: 'Oct', value: 2410000, benchmark: 2240000 },
+    { date: 'Nov', value: 2480000, benchmark: 2280000 },
+    { date: 'Dec', value: 2547830, benchmark: 2310000 },
+  ],
+  aiPrediction: [
+    { date: 'W1', actual: 112000, predicted: 111500, upper: 113000, lower: 110000 },
+    { date: 'W2', actual: 112458, predicted: 112200, upper: 113500, lower: 110900 },
+    { date: 'W3', actual: null, predicted: 113100, upper: 114800, lower: 111400 },
+    { date: 'W4', actual: null, predicted: 114200, upper: 116200, lower: 112200 },
+    { date: 'W5', actual: null, predicted: 113800, upper: 116000, lower: 111600 },
+    { date: 'W6', actual: null, predicted: 115000, upper: 117500, lower: 112500 },
+  ],
+  buySellTrend: [
+    { date: 'Mon', buy: 12, sell: 5 },
+    { date: 'Tue', buy: 8, sell: 10 },
+    { date: 'Wed', buy: 15, sell: 3 },
+    { date: 'Thu', buy: 6, sell: 8 },
+    { date: 'Fri', buy: 11, sell: 7 },
+  ],
+  riskHeatmap: [
+    { ticker: 'ENGRO', volatility: 0.65, beta: 1.1, var: 0.45, sharpe: 1.8 },
+    { ticker: 'LUCK', volatility: 0.45, beta: 0.9, var: 0.35, sharpe: 2.1 },
+    { ticker: 'HBL', volatility: 0.35, beta: 0.8, var: 0.25, sharpe: 2.4 },
+    { ticker: 'OGDC', volatility: 0.72, beta: 1.2, var: 0.55, sharpe: 1.5 },
+    { ticker: 'SYS', volatility: 0.85, beta: 1.4, var: 0.65, sharpe: 1.3 },
+  ],
+};
