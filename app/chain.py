@@ -96,7 +96,9 @@ class ActionChain:
             input_state={"psx_url": cfg.psx_base_url},
         )
         if snapshot is None:
-            snapshot = MarketSnapshot()
+            # Foundational step failed — abort
+            run.status = ActionStatus.FAILED
+            raise RuntimeError(f"Step 1 failed: {step1.error}")
         run.market_snapshot = snapshot
 
         # ── Step 2: Scrape news ────────────────────────────────────────────────
@@ -146,6 +148,15 @@ class ActionChain:
         # ── Step 5: Construct portfolio ────────────────────────────────────────
         step5 = self._make_step(5, ActionType.CONSTRUCT_PORTFOLIO)
         run.steps.append(step5)
+
+        # Pre-filter before Gemini reasoning
+        top_signals = sorted(signals, key=lambda s: s.confidence, reverse=True)[:20]
+        recent_articles = sorted(
+            articles,
+            key=lambda a: a.published_at or a.scraped_at,
+            reverse=True
+        )[:10]
+
         portfolio = await self._run_step(
             step5,
             self._step_construct_portfolio,
@@ -154,10 +165,17 @@ class ActionChain:
                 "max_positions": max_positions,
                 "risk_preference": risk_preference.value,
                 "conflict_count": len(conflicts),
+                "filtering": {
+                    "original_signals": len(signals),
+                    "filtered_signals": len(top_signals),
+                    "original_articles": len(articles),
+                    "filtered_articles": len(recent_articles),
+                }
             },
             snapshot=snapshot,
-            articles=articles,
-            signals=signals,
+            articles=recent_articles,
+            signals=top_signals,
+            all_signals=signals,
             conflicts=conflicts,
             capital_pkr=capital_pkr,
             max_positions=max_positions,
@@ -220,6 +238,7 @@ class ActionChain:
         snapshot: MarketSnapshot,
         articles: list[NewsArticle],
         signals: list[Signal],
+        all_signals: list[Signal],
         conflicts: list[ConflictReport],
         capital_pkr: float,
         max_positions: int,
@@ -239,7 +258,7 @@ class ActionChain:
             gemini_output=gemini_output,
             capital_pkr=capital_pkr,
             quotes=snapshot.quotes,
-            all_signals=signals,
+            all_signals=all_signals,
             conflicts=conflicts,
         )
 

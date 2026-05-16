@@ -179,6 +179,7 @@ class GeminiAgent:
         except json.JSONDecodeError:
             # Attempt to extract JSON block if wrapped in markdown
             import re
+
             match = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", raw, re.DOTALL)
             if match:
                 result = json.loads(match.group(1))

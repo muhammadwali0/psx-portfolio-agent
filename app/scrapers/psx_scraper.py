@@ -26,6 +26,10 @@ from app.logger import get_logger
 from app.models import MarketSnapshot, StockQuote
 from app.scrapers.base import BaseScraper, ScraperError
 
+from playwright.async_api import async_playwright
+from fake_useragent import UserAgent
+from tenacity import retry, stop_after_attempt, wait_exponential
+
 logger = get_logger(__name__)
 
 
@@ -41,7 +45,10 @@ _NUM_RE = re.compile(r"[^\d.\-]")
 def _parse_float(text: str | None, fallback: float = 0.0) -> float:
     if not text:
         return fallback
-    cleaned = _NUM_RE.sub("", text.strip())
+    cleaned = re.sub(r"[^\d.\-]", "", text.strip())
+    # Handle edge case where negative sign is not at start
+    if cleaned.count("-") > 1:
+        cleaned = cleaned.replace("-", "")
     try:
         return float(cleaned)
     except ValueError:
@@ -75,16 +82,9 @@ class PSXScraper(BaseScraper):
         logger.info("psx_scraper.start")
         snapshot = MarketSnapshot()
 
-        try:
-            await self._fetch_market_summary(snapshot)
-        except ScraperError as exc:
-            logger.warning("psx_scraper.summary_failed", error=str(exc))
-
-        try:
-            quotes = await self._fetch_equities_board()
-            snapshot.quotes = quotes
-        except ScraperError as exc:
-            logger.warning("psx_scraper.equities_failed", error=str(exc))
+        # Both of these should raise if they fail, as requested by user
+        await self._fetch_market_summary(snapshot)
+        snapshot.quotes = await self._fetch_equities_board()
 
         snapshot.scraped_at = datetime.utcnow()
         logger.info(
@@ -104,8 +104,74 @@ class PSXScraper(BaseScraper):
             "top_losers": sorted_by_change[:n],
         }
 
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=2, max=10),
+        reraise=True,
+    )
+    async def fetch(self) -> MarketSnapshot:
+        """
+        Fetch market data using Playwright from https://dps.psx.com.pk/market-watch.
+        Waits for the equities table to render and parses it.
+        """
+        ua = UserAgent()
+        user_agent_string = ua.random
+
+        async with async_playwright() as p:
+            # Launch chromium with no-sandbox for Cloud Run compatibility
+            browser = await p.chromium.launch(
+                headless=True,
+                args=["--no-sandbox", "--disable-setuid-sandbox"],
+            )
+            try:
+                context = await browser.new_context(user_agent=user_agent_string)
+                page = await context.new_page()
+
+                logger.info("psx_scraper.fetch.navigating", url="https://dps.psx.com.pk/market-watch")
+                await page.goto(
+                    "https://dps.psx.com.pk/market-watch",
+                    wait_until="domcontentloaded",
+                    timeout=60000,
+                )
+
+                # Wait for the equities table to render.
+                # PSX uses JS to populate these tables.
+                logger.info("psx_scraper.fetch.waiting_for_table")
+                await page.wait_for_selector(
+                    ".tbl tbody tr", state="visible", timeout=60000
+                )
+
+                # Extract the full page HTML
+                html = await page.content()
+
+                # Pass to existing parse method
+                snapshot = self.parse_snapshot_from_html(html)
+
+                # ALSO fetch market summary to get the index, since market-watch doesn't have it in easy structure
+                await self._fetch_market_summary(snapshot)
+
+                snapshot.scraped_at = datetime.utcnow()
+
+                logger.info(
+                    "psx_scraper.fetch.done",
+                    kse100=snapshot.kse100_index,
+                    quote_count=len(snapshot.quotes),
+                )
+                return snapshot
+
+            except Exception as exc:
+                logger.error("psx_scraper.fetch.failed", error=str(exc))
+                raise ScraperError(f"Playwright fetch failed: {exc}") from exc
+            finally:
+                await browser.close()
+
     # ── Private parsers ────────────────────────────────────────────────────────
 
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=2, max=10),
+        reraise=True,
+    )
     async def _fetch_market_summary(self, snapshot: MarketSnapshot) -> None:
         url = self.base_url + _MARKET_SUMMARY_PATH
         resp = await self.get(url)
@@ -114,22 +180,31 @@ class PSXScraper(BaseScraper):
 
     def _parse_index_block(self, soup: BeautifulSoup, snapshot: MarketSnapshot) -> None:
         """Extract KSE-100 index values from the market summary page."""
-        # Look for a block containing "KSE-100" heading
-        for tag in soup.find_all(True, string=re.compile(r"KSE.?100", re.I)):
-            parent: Tag = tag.find_parent(["div", "section", "article", "tr"])
-            if parent is None:
-                continue
-            text_nodes = parent.get_text(" ", strip=True)
-            nums = re.findall(r"[\d,]+\.?\d*", text_nodes)
-            float_nums = [_parse_float(n) for n in nums if n]
-            if len(float_nums) >= 2:
-                snapshot.kse100_index = float_nums[0]
-                snapshot.kse100_change = float_nums[1] if len(float_nums) > 1 else 0.0
-                if snapshot.kse100_index:
-                    snapshot.kse100_change_pct = (
-                        snapshot.kse100_change / snapshot.kse100_index
-                    ) * 100
-                break
+        # Find KSE100 heading and extract the value from the h4 tag following it
+        kse100_heading = soup.find(string=re.compile(r"KSE100", re.I))
+        if kse100_heading:
+            parent = kse100_heading.find_parent()
+            # The h4 tag containing the value is typically the next tag sibling
+            val_tag = parent.find_next_sibling("h4")
+            if not val_tag:
+                # Fallback: maybe it's not immediate
+                val_tag = parent.find_next("h4")
+            if val_tag:
+                val = _parse_float(val_tag.get_text())
+                if val:
+                    snapshot.kse100_index = val
+                    # Try to find change/pct in sibling col-xs-6 if available
+                    col_parent = parent.find_parent("div")
+                    if col_parent:
+                        change_parent = col_parent.find_next_sibling("div", class_="col-xs-6")
+                        if change_parent:
+                            change_tag = change_parent.find("h5")
+                            if change_tag:
+                                snapshot.kse100_change = _parse_float(change_tag.get_text())
+                                if snapshot.kse100_index:
+                                    snapshot.kse100_change_pct = (
+                                        snapshot.kse100_change / snapshot.kse100_index
+                                    ) * 100
 
         # Advances / Declines
         for label, attr in [
@@ -139,15 +214,34 @@ class PSXScraper(BaseScraper):
         ]:
             tag = soup.find(True, string=re.compile(label, re.I))
             if tag:
-                sibling = tag.find_next_sibling()
-                if sibling:
-                    setattr(snapshot, attr, _parse_int(sibling.get_text()))
+                parent = tag.find_parent()
+                if parent:
+                    # The value is typically in the parent's text
+                    text = parent.get_text()
+                    nums = re.findall(r"\d+", text)
+                    if nums:
+                        setattr(snapshot, attr, int(nums[0]))
 
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=2, max=10),
+        reraise=True,
+    )
     async def _fetch_equities_board(self) -> list[StockQuote]:
-        url = self.base_url + _EQUITIES_PATH
-        resp = await self.get(url)
-        soup = BeautifulSoup(resp.text, "lxml")
-        return self._parse_equities_table(soup)
+        """Fetch equities from the dps market watch page."""
+        url = "https://dps.psx.com.pk/market-watch"
+        async with async_playwright() as p:
+            browser = await p.chromium.launch(headless=True)
+            page = await browser.new_page()
+            try:
+                await page.goto(url, wait_until="networkidle")
+                # Wait for the table to load
+                await page.wait_for_selector(".tbl tbody tr", state="visible", timeout=30000)
+                html = await page.content()
+                soup = BeautifulSoup(html, "lxml")
+                return self._parse_equities_table(soup)
+            finally:
+                await browser.close()
 
     def _parse_equities_table(self, soup: BeautifulSoup) -> list[StockQuote]:
         """Parse the main equities table into StockQuote objects."""

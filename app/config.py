@@ -53,15 +53,15 @@ class Settings(BaseSettings):
     geo_business_url: str = "https://www.geo.tv/category/business"
 
     # ── Cache (optional — falls back to in-process cache) ───────────────────
-    cache_ttl_seconds: int = 300          # 5 minutes for market data
-    news_cache_ttl_seconds: int = 900     # 15 minutes for news
+    cache_ttl_seconds: int = 300  # 5 minutes for market data
+    news_cache_ttl_seconds: int = 900  # 15 minutes for news
 
     # ── Portfolio Defaults ───────────────────────────────────────────────────
-    portfolio_capital_pkr: float = 1_000_000.0   # 10 lac default
+    portfolio_capital_pkr: float = 1_000_000.0  # 10 lac default
     portfolio_max_positions: int = 10
     portfolio_max_single_stock_pct: float = 0.20  # 20 % cap per stock
     portfolio_min_single_stock_pct: float = 0.02  # 2 % floor
-    risk_free_rate: float = 0.21          # SBP policy rate approx
+    risk_free_rate: float = 0.21  # SBP policy rate approx
 
     @field_validator("log_level")
     @classmethod
