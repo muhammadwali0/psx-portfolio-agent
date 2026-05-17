@@ -21,7 +21,7 @@
 
 ![Demo](https://img.shields.io/badge/Status-Live-22c55e?style=flat-square&logo=statuspage&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-a855f7?style=flat-square)
-![Tests](https://img.shields.io/badge/Tests-Offline%20%26%20Mocked-6366f1?style=flat-square&logo=pytest&logoColor=white)
+![Tests](https://img.shields.io/badge/Tests-Online%20%26%20Mocked-6366f1?style=flat-square&logo=pytest&logoColor=white)
 
 </div>
 
@@ -95,7 +95,7 @@ The agent does not rely on static rules. Every portfolio is reasoned from scratc
 [![structlog](https://img.shields.io/badge/structlog-24.2-6366f1?style=flat-square)]()
 
 ### AI
-[![Google Gemini](https://img.shields.io/badge/Gemini_2.5_Pro-4285F4?style=flat-square&logo=google&logoColor=white)](https://deepmind.google/technologies/gemini/)
+[![Google Gemini](https://img.shields.io/badge/Gemini_3_Flash-4285F4?style=flat-square&logo=google&logoColor=white)](https://deepmind.google/technologies/gemini/)
 [![Tenacity](https://img.shields.io/badge/Tenacity-Retry_Logic-f59e0b?style=flat-square)]()
 [![diskcache](https://img.shields.io/badge/diskcache-Response_Cache-6366f1?style=flat-square)]()
 
