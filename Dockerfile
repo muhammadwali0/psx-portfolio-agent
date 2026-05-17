@@ -18,11 +18,37 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
-# Install Playwright browsers (Chromium for JS-heavy PSX pages)
-RUN playwright install chromium --with-deps
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    chromium \
+    fonts-liberation \
+    fonts-noto \
+    libnss3 \
+    libatk-bridge2.0-0 \
+    libdrm2 \
+    libxkbcommon0 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxfixes3 \
+    libxrandr2 \
+    libgbm1 \
+    libasound2t64 \
+    && rm -rf /var/lib/apt/lists/*
+
+ENV PLAYWRIGHT_BROWSERS_PATH=0
+RUN playwright install chromium
 
 # ─── Application ──────────────────────────────────────────────────────────────
 FROM deps AS app
+
+# Install Node and build frontend
+RUN apt-get update && apt-get install -y --no-install-recommends nodejs npm \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY frontend/package.json frontend/package-lock.json* ./frontend/
+RUN cd frontend && npm install
+
+COPY frontend/ ./frontend/
+RUN cd frontend && npm run build
 
 COPY . .
 
@@ -34,4 +60,5 @@ EXPOSE 8080
 RUN adduser --disabled-password --gecos "" appuser && chown -R appuser /app
 USER appuser
 
+ENV PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080", "--workers", "2", "--log-level", "info"]

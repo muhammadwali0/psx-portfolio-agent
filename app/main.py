@@ -73,20 +73,12 @@ def create_app() -> FastAPI:
     app.include_router(router, prefix=cfg.api_prefix)
 
     # ── Frontend static files (only present after `npm run build`) ────────────
-    frontend_dist = os.path.abspath(
-        os.path.join(os.path.dirname(__file__), "..", "frontend", "dist")
-    )
-    if os.path.exists(frontend_dist):
-        assets_dir = os.path.join(frontend_dist, "assets")
-        if os.path.exists(assets_dir):
-            app.mount(
-                "/assets",
-                StaticFiles(directory=assets_dir),
-                name="assets",
-            )
+    static_dir = os.path.join(os.path.dirname(__file__), "static")
+    if os.path.isdir(static_dir):
+        app.mount("/assets", StaticFiles(directory=os.path.join(static_dir, "assets")), name="assets")
 
         @app.get("/{full_path:path}", include_in_schema=False)
-        async def serve_frontend(full_path: str) -> FileResponse:
-            return FileResponse(os.path.join(frontend_dist, "index.html"))
+        async def serve_frontend(_: str):
+            return FileResponse(os.path.join(static_dir, "index.html"))
 
     return app
