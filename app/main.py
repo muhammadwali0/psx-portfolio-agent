@@ -4,17 +4,19 @@ FastAPI application factory.
 
 from __future__ import annotations
 
+import os
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
-
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
-from app.api.routes import limiter
-from app.api.routes import router
+
+from app.api.routes import limiter, router
 from app.config import get_settings
 from app.logger import configure_logging, get_logger
 
@@ -67,7 +69,24 @@ def create_app() -> FastAPI:
     )
     app.add_middleware(GZipMiddleware, minimum_size=1000)
 
-    # ── Routes ────────────────────────────────────────────────────────────────
+    # ── API Routes ────────────────────────────────────────────────────────────
     app.include_router(router, prefix=cfg.api_prefix)
+
+    # ── Frontend static files (only present after `npm run build`) ────────────
+    frontend_dist = os.path.abspath(
+        os.path.join(os.path.dirname(__file__), "..", "frontend", "dist")
+    )
+    if os.path.exists(frontend_dist):
+        assets_dir = os.path.join(frontend_dist, "assets")
+        if os.path.exists(assets_dir):
+            app.mount(
+                "/assets",
+                StaticFiles(directory=assets_dir),
+                name="assets",
+            )
+
+        @app.get("/{full_path:path}", include_in_schema=False)
+        async def serve_frontend(full_path: str) -> FileResponse:
+            return FileResponse(os.path.join(frontend_dist, "index.html"))
 
     return app

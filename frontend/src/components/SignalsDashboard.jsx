@@ -11,10 +11,10 @@ const up = (d) => ({ initial: { opacity: 0, y: 12 }, animate: { opacity: 1, y: 0
 
 function SignalCard({ sig, idx }) {
   const tk = String(sig.ticker || sig.symbol || '—');
-  const sent = sig.sentiment || sig.signal || sig.direction || 'neutral';
+  const sent = sig.direction || 'neutral';
   const conf = sig.confidence ?? sig.score ?? 0;
   const pct = conf > 1 ? conf : conf * 100;
-  const hl = String(sig.headline || sig.news || sig.reason || sig.summary || '');
+  const hl = String(sig.rationale || '');
   const src = String(sig.source || '');
   const c = cfg(sent);
 
@@ -46,13 +46,21 @@ function SignalCard({ sig, idx }) {
 export default function SignalsDashboard({ data }) {
   if (!data) return null;
   const p = data.portfolio || data;
-  const sigs = p.signals || p.market_signals || p.analysis || [];
+  const sigs = data.signals || p.signals || [];
   if (!Array.isArray(sigs) || !sigs.length) return null;
 
-  const bull = sigs.filter(s => cfg(s.sentiment || s.signal).Icon === TrendingUp).length;
-  const bear = sigs.filter(s => cfg(s.sentiment || s.signal).Icon === TrendingDown).length;
-  const neut = sigs.length - bull - bear;
-  const tickers = [...new Set(sigs.map(s => s.ticker || s.symbol).filter(Boolean))];
+  const portfolioTickers = new Set(
+    (p.positions || []).map(pos => pos.ticker || pos.symbol).filter(Boolean)
+  );
+
+  const filteredSigs = portfolioTickers.size > 0
+    ? sigs.filter(s => portfolioTickers.has(s.ticker))
+    : sigs;
+
+  const bull = filteredSigs.filter(s => cfg(s.direction).Icon === TrendingUp).length;
+  const bear = filteredSigs.filter(s => cfg(s.direction).Icon === TrendingDown).length;
+  const neut = filteredSigs.length - bull - bear;
+  const tickers = [...new Set(filteredSigs.map(s => s.ticker || s.symbol).filter(Boolean))];
 
   return (
     <section className="px-4 pb-6">
@@ -65,12 +73,12 @@ export default function SignalsDashboard({ data }) {
         <motion.div {...up(0)} className="glass rounded-2xl p-4 mb-3.5">
           <div className="flex justify-between mb-2">
             <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Sentiment</span>
-            <span className="text-[10px] text-slate-400 dark:text-slate-500">{sigs.length} signals</span>
+            <span className="text-[10px] text-slate-400 dark:text-slate-500">{filteredSigs.length} signals</span>
           </div>
           <div className="flex h-2 rounded-full overflow-hidden gap-0.5">
-            {bull > 0 && <motion.div initial={{ width: 0 }} animate={{ width: `${(bull / sigs.length) * 100}%` }} transition={{ duration: 0.5 }} className="bg-emerald-500 first:rounded-l-full" />}
-            {neut > 0 && <motion.div initial={{ width: 0 }} animate={{ width: `${(neut / sigs.length) * 100}%` }} transition={{ duration: 0.5, delay: 0.08 }} className="bg-slate-300 dark:bg-slate-600" />}
-            {bear > 0 && <motion.div initial={{ width: 0 }} animate={{ width: `${(bear / sigs.length) * 100}%` }} transition={{ duration: 0.5, delay: 0.16 }} className="bg-red-400 last:rounded-r-full" />}
+            {bull > 0 && <motion.div initial={{ width: 0 }} animate={{ width: `${(bull / filteredSigs.length) * 100}%` }} transition={{ duration: 0.5 }} className="bg-emerald-500 first:rounded-l-full" />}
+            {neut > 0 && <motion.div initial={{ width: 0 }} animate={{ width: `${(neut / filteredSigs.length) * 100}%` }} transition={{ duration: 0.5, delay: 0.08 }} className="bg-slate-300 dark:bg-slate-600" />}
+            {bear > 0 && <motion.div initial={{ width: 0 }} animate={{ width: `${(bear / filteredSigs.length) * 100}%` }} transition={{ duration: 0.5, delay: 0.16 }} className="bg-red-400 last:rounded-r-full" />}
           </div>
           <div className="flex gap-4 mt-2 text-[10px]">
             <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-semibold"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />{bull} Bullish</span>
@@ -90,7 +98,7 @@ export default function SignalsDashboard({ data }) {
         )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-          {sigs.map((s, i) => <SignalCard key={s.ticker || i} sig={s} idx={i} />)}
+          {filteredSigs.map((s, i) => <SignalCard key={s.ticker || i} sig={s} idx={i} />)}
         </div>
       </div>
     </section>
