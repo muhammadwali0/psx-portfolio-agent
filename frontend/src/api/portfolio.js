@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: '/api/v1',
+  baseURL: 'https://psx-portfolio-agent-984015272058.us-central1.run.app/api/v1',
   headers: { 'Content-Type': 'application/json' },
   timeout: 30000,
 });

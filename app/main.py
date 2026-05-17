@@ -4,15 +4,12 @@ FastAPI application factory.
 
 from __future__ import annotations
 
-import os
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
-from fastapi.responses import FileResponse
-from fastapi.staticfiles import StaticFiles
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 
@@ -71,14 +68,5 @@ def create_app() -> FastAPI:
 
     # ── API Routes ────────────────────────────────────────────────────────────
     app.include_router(router, prefix=cfg.api_prefix)
-
-    # ── Frontend static files (only present after `npm run build`) ────────────
-    static_dir = os.path.join(os.path.dirname(__file__), "static")
-    if os.path.isdir(static_dir):
-        app.mount("/assets", StaticFiles(directory=os.path.join(static_dir, "assets")), name="assets")
-
-        @app.get("/{full_path:path}", include_in_schema=False)
-        async def serve_frontend(_: str):
-            return FileResponse(os.path.join(static_dir, "index.html"))
 
     return app
