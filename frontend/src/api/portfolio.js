@@ -9,7 +9,7 @@ const api = axios.create({
 // ──────────────────────────────────────────────────────
 // DEMO MODE: Set to false once your backend is running
 // ──────────────────────────────────────────────────────
-const DEMO_MODE = true;
+const DEMO_MODE = false;
 
 // ── Demo data (only used when DEMO_MODE = true) ──────
 const DEMO_RESULT = {

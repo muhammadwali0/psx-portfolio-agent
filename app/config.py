@@ -37,7 +37,7 @@ class Settings(BaseSettings):
 
     # ── Google / Gemini ──────────────────────────────────────────────────────
     google_api_key: str = Field(..., description="Gemini API key")
-    gemini_model: str = "gemini-2.5-pro"
+    gemini_model: str = "gemini-3-flash-preview"
     gemini_temperature: float = 0.2
     gemini_max_output_tokens: int = 8192
     google_cloud_project: str | None = None

@@ -1,7 +1,7 @@
 """
 Gemini Reasoning Agent
 ======================
-Uses Google Gemini (gemini-2.5-pro) to perform deep reasoning over
+Uses Google Gemini (gemini-3-flash-preview) to perform deep reasoning over
 extracted signals and conflict reports, then produce:
   1. A structured portfolio allocation JSON.
   2. A human-readable investment thesis.
@@ -18,6 +18,11 @@ from typing import Any, Sequence
 
 import google.generativeai as genai
 from google.generativeai.types import GenerationConfig
+
+import hashlib
+import diskcache
+
+_cache = diskcache.Cache("/tmp/gemini_cache")
 
 from app.config import get_settings
 from app.logger import get_logger
@@ -153,6 +158,16 @@ class GeminiAgent:
         Returns a dict matching ``_PORTFOLIO_JSON_SCHEMA``.
         Raises ValueError if the model response cannot be parsed as JSON.
         """
+        key_parts = (
+            f"{len(signals)}-{len(conflicts)}-{capital_pkr:.0f}"
+            f"-{risk_preference.value}-{max_positions}"
+            f"-{snapshot.kse100_index:.0f}-{snapshot.kse100_change_pct:.2f}"
+        )
+        cache_key = hashlib.md5(key_parts.encode()).hexdigest()
+        if cache_key in _cache:
+            logger.info("gemini_agent.cache_hit", key=cache_key)
+            return _cache[cache_key]
+
         prompt = self._build_prompt(
             signals=signals,
             conflicts=conflicts,
@@ -192,6 +207,7 @@ class GeminiAgent:
             positions=len(result.get("positions", [])),
             risk=result.get("risk_assessment"),
         )
+        _cache.set(cache_key, result, expire=300)
         return result
 
     async def explain_conflict(self, conflict: ConflictReport) -> str:
@@ -205,7 +221,7 @@ class GeminiAgent:
             Keep it jargon-free.
         """)
         try:
-            model = genai.GenerativeModel(self._cfg.gemini_model)
+            model = genai.GenerativeModel("gemini-3-flash-preview")
             resp = await model.generate_content_async(prompt)
             return resp.text.strip()
         except Exception as exc:

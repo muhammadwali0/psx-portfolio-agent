@@ -22,6 +22,7 @@ fastapi==0.111.0
 uvicorn[standard]==0.30.1
 pydantic==2.7.1
 pydantic-settings==2.3.0
+slowapi==0.1.9
 
 # ─── Async / Concurrency ───────────────────────────────────────────────────────
 aiohttp==3.9.5
@@ -29,6 +30,7 @@ asyncio-throttle==1.0.2
 
 # ─── Caching & Storage ─────────────────────────────────────────────────────────
 diskcache==5.6.3
+redis==5.0.4
 
 # ─── Monitoring & Logging ──────────────────────────────────────────────────────
 structlog==24.2.0

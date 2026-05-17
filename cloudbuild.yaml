@@ -32,7 +32,7 @@ steps:
       - --concurrency=80
       - --min-instances=0
       - --max-instances=5
-      - --set-secrets=GOOGLE_API_KEY=psx-agent-gemini-key:latest
+      - --set-secrets=GOOGLE_API_KEY=psx-agent-gemini-key:latest,REDIS_URL=psx-agent-redis-url:latest
 
 substitutions:
   _REGION: us-central1

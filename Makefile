@@ -13,6 +13,9 @@ run:
 	cp -n .env.example .env 2>/dev/null || true
 	uvicorn main:app --reload --host 0.0.0.0 --port 8080
 
+run-all:
+	concurrently "make run" "cd frontend && npm run dev"
+
 # ─── Testing ───────────────────────────────────────────────────────────────────
 test:
 	pytest tests/ -v --tb=short
@@ -41,6 +44,7 @@ docker-build:
 docker-run:
 	docker run --rm -p 8080:8080 \
 		--env-file .env \
+		--network host \
 		psx-portfolio-agent:latest
 
 # ─── Cloud Run (manual deploy) ─────────────────────────────────────────────────

@@ -18,6 +18,11 @@ from __future__ import annotations
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 from fastapi.responses import JSONResponse
 
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+from fastapi import Request
+limiter = Limiter(key_func=get_remote_address)
+
 from app.chain import ActionChain
 from app.config import Settings, get_settings
 from app.logger import get_logger
@@ -53,6 +58,7 @@ async def health(cfg: Settings = Depends(get_settings)) -> HealthResponse:
 
 # ─── Portfolio ────────────────────────────────────────────────────────────────
 
+@limiter.limit("5/minute")
 @router.post(
     "/portfolio/run",
     response_model=AgentRun,
@@ -61,7 +67,8 @@ async def health(cfg: Settings = Depends(get_settings)) -> HealthResponse:
     status_code=202,
 )
 async def run_portfolio(
-    request: RunPortfolioRequest,
+    request: Request,
+    body: RunPortfolioRequest,
     background_tasks: BackgroundTasks,
     store: RunStore = Depends(get_store),
     cfg: Settings = Depends(get_settings),
@@ -88,10 +95,10 @@ async def run_portfolio(
         chain = ActionChain()
         try:
             result = await chain.execute(
-                capital_pkr=request.capital_pkr,
-                max_positions=request.max_positions,
-                risk_preference=request.risk_preference,
-                tickers_filter=request.tickers_filter or None,
+                capital_pkr=body.capital_pkr,
+                max_positions=body.max_positions,
+                risk_preference=body.risk_preference,
+                tickers_filter=body.tickers_filter or None,
             )
             result.run_id = run_id  # keep the pre-issued ID
             store.save(result)

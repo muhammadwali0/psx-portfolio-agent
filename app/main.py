@@ -11,6 +11,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from app.api.routes import limiter
 from app.api.routes import router
 from app.config import get_settings
 from app.logger import configure_logging, get_logger
@@ -50,6 +53,9 @@ def create_app() -> FastAPI:
         redoc_url="/redoc",
         lifespan=lifespan,
     )
+
+    app.state.limiter = limiter
+    app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
     # ── Middleware ─────────────────────────────────────────────────────────────
     app.add_middleware(

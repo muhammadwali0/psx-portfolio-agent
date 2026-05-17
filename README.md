@@ -25,7 +25,7 @@ An agentic system that scrapes live PSX market data and Pakistani financial news
          └───────────────────┴───────────────────────────┘
                              │
                         GeminiAgent
-                    (gemini-2.5-pro)
+                    (gemini-3-flash-preview)
                              │
                       PortfolioBuilder
                              │
@@ -200,7 +200,7 @@ make typecheck  # mypy
 | Variable | Required | Default | Description |
 |---|---|---|---|
 | `GOOGLE_API_KEY` | ✅ | — | Gemini API key |
-| `GEMINI_MODEL` | | `gemini-2.5-pro` | Model ID |
+| `GEMINI_MODEL` | | `gemini-3-flash-preview` | Model ID |
 | `ENVIRONMENT` | | `development` | `development\|staging\|production` |
 | `PORT` | | `8080` | Server port (Cloud Run injects this) |
 | `PORTFOLIO_CAPITAL_PKR` | | `1000000` | Default capital (PKR) |

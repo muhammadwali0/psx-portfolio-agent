@@ -98,7 +98,7 @@ export default function App() {
       <AnimatePresence>
         {(isIdle || isError) && !isCompleted && (
           <motion.div key="input" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.4 }}>
-            <InputPanel onSubmit={handleSubmit} isLoading={false} />
+            <InputPanel onSubmit={handleSubmit} isLoading={isRunning} />
           </motion.div>
         )}
       </AnimatePresence>
