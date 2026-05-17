@@ -38,13 +38,14 @@ RUN playwright install chromium
 # ─── Application ──────────────────────────────────────────────────────────────
 FROM deps AS app
 
-# Install Node 20 via NodeSource (clean, official)
 RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
     && apt-get install -y nodejs \
     && rm -rf /var/lib/apt/lists/*
 
 COPY frontend/package.json frontend/package-lock.json* ./frontend/
-RUN cd frontend && npm install
+
+# Pin vite to stable 5.x before installing
+RUN cd frontend && npm pkg set devDependencies.vite="^5.4.0" && npm install
 
 COPY frontend/ ./frontend/
 RUN cd frontend && npm run build
