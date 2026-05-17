@@ -38,7 +38,9 @@ RUN playwright install chromium
 # ─── Application ──────────────────────────────────────────────────────────────
 FROM deps AS app
 
-RUN apt-get update && apt-get install -y --no-install-recommends nodejs npm \
+# Install Node 20 via NodeSource (clean, official)
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+    && apt-get install -y nodejs \
     && rm -rf /var/lib/apt/lists/*
 
 COPY frontend/package.json frontend/package-lock.json* ./frontend/
