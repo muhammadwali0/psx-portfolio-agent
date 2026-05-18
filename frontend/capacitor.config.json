@@ -1,0 +1,8 @@
+{
+  "appId": "com.hackathon.psxagent",
+  "appName": "PSX Portfolio Agent",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https"
+  }
+}
