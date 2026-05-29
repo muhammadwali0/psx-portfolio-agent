@@ -80,18 +80,7 @@ class PSXScraper(BaseScraper):
     async def scrape(self) -> MarketSnapshot:
         """Fetch and return a complete MarketSnapshot."""
         logger.info("psx_scraper.start")
-        snapshot = MarketSnapshot()
-
-        # Both of these should raise if they fail, as requested by user
-        await self._fetch_market_summary(snapshot)
-        snapshot.quotes = await self._fetch_equities_board()
-
-        snapshot.scraped_at = datetime.utcnow()
-        logger.info(
-            "psx_scraper.done",
-            kse100=snapshot.kse100_index,
-            quote_count=len(snapshot.quotes),
-        )
+        snapshot = await self.fetch()
         return snapshot
 
     async def get_top_movers(self, n: int = 20) -> dict[str, list[StockQuote]]:
@@ -147,8 +136,18 @@ class PSXScraper(BaseScraper):
                 # Pass to existing parse method
                 snapshot = self.parse_snapshot_from_html(html)
 
-                # ALSO fetch market summary to get the index, since market-watch doesn't have it in easy structure
-                await self._fetch_market_summary(snapshot)
+                # ALSO fetch market summary in the same context to get the index, since market-watch doesn't have it in easy structure
+                summary_page = await context.new_page()
+                summary_url = self.base_url + _MARKET_SUMMARY_PATH
+                logger.info("psx_scraper.fetch.navigating_summary", url=summary_url)
+                await summary_page.goto(
+                    summary_url,
+                    wait_until="domcontentloaded",
+                    timeout=60000,
+                )
+                summary_html = await summary_page.content()
+                summary_soup = BeautifulSoup(summary_html, "lxml")
+                self._parse_index_block(summary_soup, snapshot)
 
                 snapshot.scraped_at = datetime.utcnow()
 
@@ -231,10 +230,13 @@ class PSXScraper(BaseScraper):
         """Fetch equities from the dps market watch page."""
         url = "https://dps.psx.com.pk/market-watch"
         async with async_playwright() as p:
-            browser = await p.chromium.launch(headless=True)
+            browser = await p.chromium.launch(
+                headless=True,
+                args=["--no-sandbox", "--disable-setuid-sandbox"],
+            )
             page = await browser.new_page()
             try:
-                await page.goto(url, wait_until="networkidle")
+                await page.goto(url, wait_until="domcontentloaded")
                 # Wait for the table to load
                 await page.wait_for_selector(".tbl tbody tr", state="visible", timeout=30000)
                 html = await page.content()

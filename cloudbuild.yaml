@@ -31,7 +31,7 @@ steps:
       - --memory=1Gi
       - --cpu=1
       - --concurrency=80
-      - --min-instances=0
+      - --min-instances=1
       - --max-instances=5
       - --set-secrets=GOOGLE_API_KEY=psx-agent-gemini-key:latest,REDIS_URL=psx-agent-redis-url:latest
 
