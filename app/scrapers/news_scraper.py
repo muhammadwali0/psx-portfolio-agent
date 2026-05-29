@@ -41,13 +41,88 @@ _PSX_TICKERS: frozenset[str] = frozenset([
     "PAEL", "HCAR", "INDU", "PSMC", "GHNL", "CHCC",
 ])
 
-_TICKER_RE = re.compile(
-    r"\b(" + "|".join(sorted(_PSX_TICKERS, key=len, reverse=True)) + r")\b"
+# Complete company name + symbol mapping for all tickers in _PSX_TICKERS
+PSX_COMPANY_MAP: dict[str, list[str]] = {
+    "ENGRO": ["Engro", "Engro Corporation", "Engro Corp"],
+    "LUCK": ["Lucky Cement", "LUCK"],
+    "HBL": ["Habib Bank", "HBL"],
+    "UBL": ["United Bank", "UBL"],
+    "MCB": ["MCB Bank", "MCB"],
+    "NBP": ["National Bank", "NBP", "National Bank of Pakistan"],
+    "OGDC": ["OGDC", "Oil and Gas", "Oil & Gas Development"],
+    "PPL": ["Pakistan Petroleum", "PPL"],
+    "PSO": ["Pakistan State Oil", "PSO"],
+    "HUBC": ["Hub Power", "Hubco", "HUBC"],
+    "KAPCO": ["Kot Addu Power", "KAPCO"],
+    "NESTLE": ["Nestle Pakistan", "NESTLE"],
+    "SHEL": ["Shell Pakistan", "Shell", "SHEL"],
+    "MARI": ["Mari Petroleum", "MARI"],
+    "FFC": ["Fauji Fertilizer Company", "FFC", "Fauji Fertilizer"],
+    "FATIMA": ["Fatima Fertilizer", "FATIMA"],
+    "DGKC": ["D.G. Khan Cement", "DGKC", "DG Khan Cement"],
+    "KOHC": ["Kohat Cement", "KOHC"],
+    "MLCF": ["Maple Leaf", "Maple Leaf Cement", "MLCF"],
+    "FFBL": ["Fauji Fertilizer Bin Qasim", "FFBL"],
+    "EFERT": ["Engro Fertilizers", "EFERT", "Engro Fertilizer"],
+    "ICI": ["Lucky Core Industries", "ICI", "Lucky Core"],
+    "SNGP": ["Sui Northern Gas", "Sui Northern", "SNGP", "Sui Northern Gas Pipelines"],
+    "SSGC": ["Sui Southern Gas", "Sui Southern", "SSGC", "Sui Southern Gas Company"],
+    "KEL": ["K-Electric", "K Electric", "KEL"],
+    "PAKT": ["Pakistan Tobacco Company", "Pakistan Tobacco", "PAKT"],
+    "GATM": ["Gul Ahmed Textile", "Gul Ahmed", "GATM"],
+    "BAFL": ["Bank Alfalah", "BAFL"],
+    "MEBL": ["Meezan Bank", "MEBL"],
+    "BAHL": ["Bank AL Habib", "Bank Al Habib", "BAHL"],
+    "ABL": ["Allied Bank", "ABL"],
+    "AKBL": ["Askari Bank", "AKBL"],
+    "SEARL": ["The Searle Company", "Searle", "SEARL"],
+    "FEROZ": ["Ferozsons Laboratories", "Ferozsons", "FEROZ"],
+    "GLAXO": ["GlaxoSmithKline", "GSK", "GLAXO", "GlaxoSmithKline Pakistan"],
+    "ABOT": ["Abbott Laboratories", "Abbott", "ABOT", "Abbott Pakistan"],
+    "SIEM": ["Siemens Pakistan", "Siemens", "SIEM"],
+    "LOTCHEM": ["Lotte Chemical", "Lotte Chemical Pakistan", "LOTCHEM"],
+    "NRL": ["National Refinery", "NRL"],
+    "APL": ["Attock Petroleum", "APL"],
+    "HASCOL": ["Hascol Petroleum", "Hascol", "HASCOL"],
+    "BYCO": ["Byco Petroleum", "Byco", "BYCO"],
+    "ATRL": ["Attock Refinery", "ATRL"],
+    "CNERGYICO": ["Cnergyico", "Cnergyico PK", "CNERGYICO"],
+    "PAEL": ["Pak Elektron", "PAEL"],
+    "HCAR": ["Honda Atlas Cars", "Honda Atlas", "HCAR"],
+    "INDU": ["Indus Motor Company", "Indus Motor", "INDU", "Indus Motors"],
+    "PSMC": ["Pak Suzuki Motor", "Pak Suzuki", "PSMC"],
+    "GHNL": ["Ghandhara Industries", "GHNL", "Ghandhara Nissan"],
+    "CHCC": ["Cherat Cement", "CHCC"],
+}
+
+# Build an uppercase name-to-ticker reverse mapping
+_NAME_TO_TICKER: dict[str, str] = {}
+for ticker, names in PSX_COMPANY_MAP.items():
+    for name in names:
+        _NAME_TO_TICKER[name.upper()] = ticker
+
+# Sort search terms by length descending to match longest matches first
+_SORTED_NAMES = sorted(_NAME_TO_TICKER.keys(), key=len, reverse=True)
+
+# Build dynamic regex using escaped names with word boundaries
+_TICKER_NAME_RE = re.compile(
+    r"\b(" + "|".join(re.escape(name) for name in _SORTED_NAMES) + r")\b",
+    re.IGNORECASE
 )
 
 
 def _extract_tickers(text: str) -> list[str]:
-    return list(dict.fromkeys(_TICKER_RE.findall(text.upper())))
+    if not text:
+        return []
+    matches = _TICKER_NAME_RE.findall(text)
+    seen = set()
+    result = []
+    for match in matches:
+        ticker = _NAME_TO_TICKER.get(match.upper())
+        if ticker and ticker not in seen:
+            seen.add(ticker)
+            result.append(ticker)
+    return result
 
 
 def _parse_date(text: str | None) -> datetime | None:
@@ -77,7 +152,7 @@ class NewsScraper(BaseScraper):
     def __init__(self) -> None:
         cfg = get_settings()
         # Use Dawn as the primary base; other URLs are passed per-fetch
-        super().__init__(cfg.dawn_business_url, min_delay=2.0, max_delay=5.0)
+        super().__init__(cfg.dawn_business_url, min_delay=0.5, max_delay=1.5)
         self._cfg = cfg
 
     # ── Public API ─────────────────────────────────────────────────────────────
