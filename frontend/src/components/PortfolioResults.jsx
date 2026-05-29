@@ -13,7 +13,6 @@ function Card({ pos, idx }) {
   const [open, setOpen] = useState(false);
   const tk = String(pos.ticker || pos.symbol || '—');
   const co = String(pos.company_name || pos.company || pos.name || '');
-  const sec = String(pos.sector || pos.industry || '');
   const alloc = Number(pos.allocation_pct ?? pos.allocation ?? pos.weight ?? 0);
   const cap = Number(pos.capital_pkr ?? pos.amount ?? 0);
   const shares = Number(pos.shares ?? pos.quantity ?? 0);
@@ -35,7 +34,6 @@ function Card({ pos, idx }) {
           </div>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
-          {sec && <span className="hidden sm:inline text-[9px] font-semibold px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400">{sec}</span>}
           <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md ${rc}`}>{risk.charAt(0).toUpperCase() + risk.slice(1)}</span>
         </div>
       </div>
@@ -86,7 +84,7 @@ function Card({ pos, idx }) {
         </div>
       )}
 
-      {sec && <div className="sm:hidden mt-2"><span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400">{sec}</span></div>}
+
 
       {just && (
         <div className="mt-3 pt-3 border-t border-slate-100/80 dark:border-slate-700/40">

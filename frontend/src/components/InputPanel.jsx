@@ -71,9 +71,11 @@ export default function InputPanel({ onSubmit, isLoading }) {
             <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-wider">
               Max Positions — <span className="text-indigo-600 dark:text-indigo-400 font-bold text-sm">{positions}</span>
             </label>
-            <input type="range" min={1} max={5} value={positions} onChange={(e) => setPositions(+e.target.value)} className="w-full" />
-            <div className="flex justify-between text-[10px] text-slate-300 dark:text-slate-600 mt-0.5 px-0.5">
-              <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span>
+            <input type="range" min={1} max={15} value={positions} onChange={(e) => setPositions(+e.target.value)} className="w-full" />
+            <div className="relative text-[10px] text-slate-300 dark:text-slate-600 mt-0.5 h-4">
+              <span className="absolute left-[28.57%] -translate-x-1/2">5</span>
+              <span className="absolute left-[64.29%] -translate-x-1/2">10</span>
+              <span className="absolute left-[100%] -translate-x-1/2">15</span>
             </div>
           </div>
 

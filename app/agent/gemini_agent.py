@@ -161,7 +161,6 @@ class GeminiAgent:
         key_parts = (
             f"{len(signals)}-{len(conflicts)}-{capital_pkr:.0f}"
             f"-{risk_preference.value}-{max_positions}"
-            f"-{snapshot.kse100_index:.0f}-{snapshot.kse100_change_pct:.2f}"
         )
         cache_key = hashlib.md5(key_parts.encode()).hexdigest()
         if cache_key in _cache:
@@ -246,6 +245,7 @@ class GeminiAgent:
             7. Consider Pakistan-specific macro factors: SBP rate, PKR/USD, CPEC, IMF programme.
         """).strip()
 
+
     def _build_prompt(
         self,
         signals: list[Signal],
@@ -258,6 +258,23 @@ class GeminiAgent:
     ) -> str:
         bull = [s for s in signals if s.direction == SignalDirection.BULLISH]
         bear = [s for s in signals if s.direction == SignalDirection.BEARISH]
+
+        instructions = [
+            f"1. Select up to {max_positions} stocks from the bullish signals.",
+            "2. Allocate capital proportional to signal strength and risk level.",
+            "3. Address every detected conflict in conflicts_addressed.",
+            "4. Set cash_allocation_pct to reflect uncertainty / market risk.",
+            "5. Be conservative if macro conditions are adverse.",
+        ]
+
+        if capital_pkr > 500000 and max_positions >= 5:
+            instructions.append(
+                "6. DIVERSIFICATION INSTRUCTION: Spread positions across at least 3 different sectors, "
+                "avoid allocating more than 40% to any single sector, and consider mid-confidence signals "
+                "from underrepresented sectors over high-confidence signals from already-represented ones."
+            )
+
+        instructions_text = "\n".join(instructions)
 
         return textwrap.dedent(f"""
             ## PSX Portfolio Construction Task
@@ -288,9 +305,5 @@ class GeminiAgent:
             {_PORTFOLIO_JSON_SCHEMA}
 
             ### Instructions
-            1. Select up to {max_positions} stocks from the bullish signals.
-            2. Allocate capital proportional to signal strength and risk level.
-            3. Address every detected conflict in conflicts_addressed.
-            4. Set cash_allocation_pct to reflect uncertainty / market risk.
-            5. Be conservative if macro conditions are adverse.
+            {instructions_text}
         """).strip()
