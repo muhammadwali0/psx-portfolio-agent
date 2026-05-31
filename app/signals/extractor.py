@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import re
 from datetime import datetime, timezone
-from typing import Sequence
+from typing import TYPE_CHECKING, Sequence
 
 from app.logger import get_logger
 from app.models import (
@@ -25,6 +25,9 @@ from app.models import (
     SignalSource,
     StockQuote,
 )
+
+if TYPE_CHECKING:
+    from app.models import SymbolHistoricalContext
 
 logger = get_logger(__name__)
 
@@ -92,17 +95,25 @@ class SignalExtractor:
         Heuristics applied (in order, each contributes to confidence):
           - Price momentum  : |change_pct| threshold → direction + base conf.
           - Volume surge    : volume vs. estimated avg boosts confidence.
-          - 52-week context : placeholder for when historical data is available.
+          - 90-day range    : position vs. SQLite OHLCV when historical context is attached.
         """
+        hist_by_symbol = (
+            snapshot.historical.by_symbol if snapshot.historical else {}
+        )
         signals: list[Signal] = []
         for quote in snapshot.quotes:
-            sig = self._quote_to_signal(quote)
+            ctx = hist_by_symbol.get(quote.symbol.upper())
+            sig = self._quote_to_signal(quote, ctx)
             if sig:
                 signals.append(sig)
         logger.info("signal_extractor.market_done", count=len(signals))
         return signals
 
-    def _quote_to_signal(self, quote: StockQuote) -> Signal | None:
+    def _quote_to_signal(
+        self,
+        quote: StockQuote,
+        historical: SymbolHistoricalContext | None = None,
+    ) -> Signal | None:
         """Convert a single StockQuote into a Signal, or None if neutral."""
         if quote.change_pct == 0 and quote.volume == 0:
             return None
@@ -126,10 +137,24 @@ class SignalExtractor:
         elif quote.volume > 500_000:
             confidence = min(confidence + 0.05, 0.95)
 
+        hist_note = ""
+        if historical and quote.current_price > 0:
+            if historical.ma200 and quote.current_price > historical.ma200:
+                confidence = min(confidence + 0.03, 0.95)
+                hist_note = " Above MA200."
+            elif historical.ma200 and quote.current_price < historical.ma200:
+                confidence = min(confidence + 0.03, 0.95)
+                hist_note = " Below MA200."
+            if historical.position_in_90d_range_pct is not None:
+                if historical.position_in_90d_range_pct >= 85:
+                    hist_note += f" Near 90d high ({historical.position_in_90d_range_pct:.0f}% of range)."
+                elif historical.position_in_90d_range_pct <= 15:
+                    hist_note += f" Near 90d low ({historical.position_in_90d_range_pct:.0f}% of range)."
+
         rationale = (
             f"{quote.symbol} moved {pct:+.2f}% "
             f"(open={quote.open_price:.2f}, close={quote.current_price:.2f}) "
-            f"on volume {quote.volume:,}."
+            f"on volume {quote.volume:,}.{hist_note}"
         )
 
         return Signal(
