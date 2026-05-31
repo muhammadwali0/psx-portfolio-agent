@@ -2,11 +2,16 @@
 
 from __future__ import annotations
 
+import asyncio
+from datetime import UTC, datetime
+
 import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 
+from app.data.store import MarketDataStore
 from app.main import create_app
+from app.models import DataManifest, PrecomputedAggregates
 from app.models import (
     MarketSnapshot,
     NewsArticle,
@@ -21,7 +26,30 @@ from app.store import RunStore
 # ─── App / HTTP client ────────────────────────────────────────────────────────
 
 @pytest.fixture
-def app():
+def app(monkeypatch, sample_snapshot):
+    async def _fake_bootstrap(**_kwargs):
+        store = MarketDataStore.get_instance()
+        agg = PrecomputedAggregates(
+            risk_free_rate=0.18,
+            moving_averages={},
+            symbol_volatility_90d={"ENGRO": 22.5},
+        )
+        store.set_market_snapshot(sample_snapshot)
+        store.set_aggregates(agg)
+        store.set_volatility_map(agg.symbol_volatility_90d)
+        store.set_news_articles([])
+        store.set_manifest(
+            DataManifest(
+                last_updated=datetime.now(tz=UTC),
+                quote_count=len(sample_snapshot.quotes),
+            )
+        )
+
+    async def _noop_loop() -> None:
+        await asyncio.sleep(86400)
+
+    monkeypatch.setattr("app.main.run_bootstrap", _fake_bootstrap)
+    monkeypatch.setattr("app.main._live_refresh_loop", _noop_loop)
     return create_app()
 
 

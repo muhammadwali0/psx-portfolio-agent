@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
-import pytest
-from unittest.mock import MagicMock
-
-from app.scrapers.news_scraper import _extract_tickers
 from app.agent.gemini_agent import GeminiAgent
-from app.models import MarketSnapshot, RiskLevel, Signal, ConflictReport, NewsArticle
+from app.models import (
+    InvestmentMode,
+    MarketSnapshot,
+    RiskLevel,
+)
+from app.scrapers.news_scraper import _extract_tickers
 
 
 def test_extract_tickers_exact_symbols():
@@ -68,6 +69,7 @@ def test_gemini_prompt_diversification_instruction():
         capital_pkr=500000,
         risk_preference=RiskLevel.MEDIUM,
         max_positions=5,
+        investment_mode=InvestmentMode.FUNDAMENTAL,
     )
     assert "DIVERSIFICATION INSTRUCTION" not in prompt_small_capital
 
@@ -79,6 +81,7 @@ def test_gemini_prompt_diversification_instruction():
         capital_pkr=600000,
         risk_preference=RiskLevel.MEDIUM,
         max_positions=4,
+        investment_mode=InvestmentMode.FUNDAMENTAL,
     )
     assert "DIVERSIFICATION INSTRUCTION" not in prompt_low_positions
 
@@ -91,8 +94,45 @@ def test_gemini_prompt_diversification_instruction():
         capital_pkr=500001,
         risk_preference=RiskLevel.MEDIUM,
         max_positions=5,
+        investment_mode=InvestmentMode.FUNDAMENTAL,
     )
     assert "DIVERSIFICATION INSTRUCTION" in prompt_diversified
-    assert "spread positions across at least 3 different sectors" in prompt_diversified
-    assert "avoid allocating more than 40% to any single sector" in prompt_diversified
-    assert "consider mid-confidence signals from underrepresented sectors" in prompt_diversified
+    assert "spread positions across at least 3 different sectors" in prompt_diversified.lower()
+    assert "avoid allocating more than 40% to any single sector" in prompt_diversified.lower()
+    assert "consider mid-confidence signals from underrepresented sectors" in prompt_diversified.lower()
+
+
+def test_gemini_prompt_modes_have_distinct_schema_and_instructions():
+    agent = GeminiAgent()
+    snapshot = MarketSnapshot(kse100_index=75000.0, advances=150, declines=50)
+
+    tactical = agent._build_prompt(
+        signals=[],
+        conflicts=[],
+        snapshot=snapshot,
+        articles=[],
+        capital_pkr=1_000_000,
+        risk_preference=RiskLevel.MEDIUM,
+        max_positions=5,
+        investment_mode=InvestmentMode.TACTICAL,
+    )
+    fundamental = agent._build_prompt(
+        signals=[],
+        conflicts=[],
+        snapshot=snapshot,
+        articles=[],
+        capital_pkr=1_000_000,
+        risk_preference=RiskLevel.MEDIUM,
+        max_positions=5,
+        investment_mode=InvestmentMode.FUNDAMENTAL,
+    )
+
+    assert "Investment mode: tactical" in tactical
+    assert "thesis_invalidation_conditions" in tactical
+    assert "stop_loss_pct" in tactical
+    assert "Provide stop_loss_pct" in tactical
+    assert "Investment mode: fundamental" in fundamental
+    assert "sector_outlook" in fundamental
+    assert "range_52w_position" in fundamental
+    assert "rebalancing_triggers" in fundamental
+    assert "Do not return stop_loss_pct" in fundamental
