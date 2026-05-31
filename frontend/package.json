@@ -15,12 +15,14 @@
     "@capacitor/core": "^8.3.4",
     "axios": "^1.16.1",
     "framer-motion": "^12.38.0",
+    "jspdf": "^4.2.1",
     "lucide-react": "^1.16.0",
     "react": "^19.2.6",
     "react-countup": "^6.5.3",
     "react-dom": "^19.2.6",
     "react-hot-toast": "^2.6.0",
-    "react-type-animation": "^3.2.0"
+    "react-type-animation": "^3.2.0",
+    "zustand": "^5.0.14"
   },
   "devDependencies": {
     "@capacitor/assets": "^3.0.5",

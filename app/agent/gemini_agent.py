@@ -41,6 +41,9 @@ from app.services.shariah import ShariahFilter
 
 logger = get_logger(__name__)
 
+_cache = diskcache.Cache("data/gemini_cache")
+
+
 
 # ─── Schema the model must return ─────────────────────────────────────────────
 
