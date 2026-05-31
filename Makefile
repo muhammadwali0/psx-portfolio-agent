@@ -48,6 +48,12 @@ docker-run:
 		psx-portfolio-agent:latest
 
 # ─── Cloud Run (manual deploy) ─────────────────────────────────────────────────
+historical-download:
+	python -m app.historical.job
+
+deploy-historical-job:
+	gcloud builds submit --config cloudbuild-historical-job.yaml
+
 deploy:
 	gcloud run deploy psx-portfolio-agent \
 		--source . \

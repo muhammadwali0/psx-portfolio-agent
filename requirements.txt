@@ -12,6 +12,11 @@ pandas==2.2.2
 numpy==1.26.4
 python-dateutil==2.9.0
 pytz==2024.1
+unlzw3==0.2.3
+xlrd==2.0.1
+
+# ─── Groq (chatbot) ────────────────────────────────────────────────────────────
+# Uses httpx — no extra package required
 
 # ─── Google AI / Gemini ────────────────────────────────────────────────────────
 google-generativeai==0.7.2
