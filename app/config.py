@@ -44,17 +44,26 @@ class Settings(BaseSettings):
     google_cloud_region: str = "us-central1"
 
     # ── Scraping ─────────────────────────────────────────────────────────────
-    scraper_timeout_seconds: int = 30
-    scraper_max_retries: int = 3
-    scraper_retry_wait_seconds: float = 2.0
+    scraper_timeout_seconds: int = 10
+    scraper_max_retries: int = 2
+    scraper_retry_wait_seconds: float = 1.0
     psx_base_url: str = "https://www.psx.com.pk"
+    psx_download_base_url: str = "https://dps.psx.com.pk/download"
+    historical_db_path: str = "data/psx_history.db"
+    historical_backfill_days: int = 90
     dawn_business_url: str = "https://www.dawn.com/business"
     ary_business_url: str = "https://arynews.tv/category/business"
     geo_business_url: str = "https://www.geo.tv/category/business"
 
+    # ── Groq (PSX chatbot) ───────────────────────────────────────────────────
+    groq_api_key: str | None = None
+    groq_model: str = "llama-3.3-70b-versatile"
+
     # ── Cache (optional — falls back to in-process cache) ───────────────────
-    cache_ttl_seconds: int = 300  # 5 minutes for market data
+    cache_ttl_seconds: int = 300  # 5 minutes live quotes
     news_cache_ttl_seconds: int = 900  # 15 minutes for news
+    aggregates_cache_ttl_seconds: int = 3600  # 1 hour pre-computed aggregates
+    manifest_cache_ttl_seconds: int = 86400  # 24 hours DataManifest
 
     # ── Portfolio Defaults ───────────────────────────────────────────────────
     portfolio_capital_pkr: float = 1_000_000.0  # 10 lac default
