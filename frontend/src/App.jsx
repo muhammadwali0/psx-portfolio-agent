@@ -12,7 +12,7 @@ import SignalsDashboard from './components/SignalsDashboard';
 import { usePortfolio } from './hooks/usePortfolio';
 
 export default function App() {
-  const { status, result, error, runAgent, reset } = usePortfolio();
+  const { status, result, error, progressMessages, runAgent, reset } = usePortfolio();
   const [lastParams, setLastParams] = useState(null);
   const resultsRef = useRef(null);
 
@@ -34,10 +34,10 @@ export default function App() {
   // ── Status helpers ───────────────────────────────────
   const isIdle = status === 'idle';
   const isLoading = status === 'loading';
-  const isPolling = status === 'polling';
+  const isStreaming = status === 'streaming';
   const isCompleted = status === 'completed';
   const isError = status === 'error';
-  const isRunning = isLoading || isPolling;
+  const isRunning = isLoading || isStreaming;
 
   const handleSubmit = (params) => {
     setLastParams(params);
@@ -118,7 +118,7 @@ export default function App() {
         )}
       </AnimatePresence>
 
-      <AgentTrace isActive={isRunning} isCompleted={isCompleted} isError={isError} errorMsg={error} />
+      <AgentTrace isActive={isRunning} isCompleted={isCompleted} isError={isError} errorMsg={error} progressMessages={progressMessages} />
 
       <AnimatePresence>
         {isCompleted && result && (

@@ -1,41 +1,27 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Globe, Newspaper, Brain, GitMerge, PieChart, Check, Loader2, Clock, Terminal, AlertCircle } from 'lucide-react';
 
+/**
+ * Maps backend SSE progress messages to pipeline step indices.
+ * Each step has: icon, title, and the exact message string that activates it.
+ */
 const STEPS = [
-  { id: 1, title: 'Scraping PSX Market', icon: Globe, lines: [
-    '→ Connecting to PSX data feeds…',
-    '→ Fetching real-time quotes for 100+ securities',
-    '→ Parsing volumes, depth, and price action',
-    '→ Market data acquisition complete ✓',
-  ]},
-  { id: 2, title: 'Reading Financial News', icon: Newspaper, lines: [
-    '→ Scanning Business Recorder, Dawn Biz, Reuters…',
-    '→ Processing macro-economic indicators',
-    '→ Analyzing SBP monetary policy updates',
-    '→ News corpus compiled ✓',
-  ]},
-  { id: 3, title: 'Extracting Signals', icon: Brain, lines: [
-    '→ Running NLP sentiment analysis pipeline…',
-    '→ Detecting bullish / bearish / neutral patterns',
-    '→ Computing RSI, MACD, EMA indicators',
-    '→ Signal extraction complete ✓',
-  ]},
-  { id: 4, title: 'Resolving Conflicts', icon: GitMerge, lines: [
-    '→ Cross-referencing conflicting signals…',
-    '→ Applying Bayesian signal weighting',
-    '→ Multi-factor reconciliation engine active',
-    '→ Consensus signals generated ✓',
-  ]},
-  { id: 5, title: 'Constructing Portfolio', icon: PieChart, lines: [
-    '→ Initializing portfolio optimizer…',
-    '→ Applying MPT constraints & position sizing',
-    '→ Setting stop-loss and target levels',
-    '→ Portfolio finalized ✓',
-  ]},
+  { id: 1, title: 'Scraping PSX Market',    icon: Globe,    trigger: 'Fetching market data...',      detail: 'Fetching real-time quotes & KSE-100 index concurrently' },
+  { id: 2, title: 'Reading Financial News',  icon: Newspaper, trigger: 'Fetching market data...',      detail: 'Scanning Dawn, ARY & Geo business sections' },
+  { id: 3, title: 'Extracting Signals',      icon: Brain,    trigger: 'Analyzing signals...',         detail: 'Running NLP sentiment & technical indicator extraction' },
+  { id: 4, title: 'Resolving Conflicts',     icon: GitMerge, trigger: 'Resolving contradictions...',  detail: 'Cross-referencing conflicting signals with Bayesian weighting' },
+  { id: 5, title: 'Constructing Portfolio',  icon: PieChart, trigger: 'Building portfolio...',        detail: 'Gemini reasoning + Modern Portfolio Theory optimisation' },
 ];
 
-const STEP_MS = 8000;
+// Maps a progress message to the furthest step it represents
+function messageToStep(msg) {
+  if (msg === 'Building portfolio...')       return 5;
+  if (msg === 'Resolving contradictions...') return 4;
+  if (msg === 'Analyzing signals...')        return 3;
+  if (msg === 'Fetching market data...')     return 1; // steps 1 & 2 are concurrent
+  return 0;
+}
 
 function Typewriter({ text, speed = 22 }) {
   const [display, setDisplay] = useState('');
@@ -52,74 +38,53 @@ function Typewriter({ text, speed = 22 }) {
   return <span className="font-mono text-xs leading-5">{display}{display.length < text.length && <span className="tw-cursor" />}</span>;
 }
 
-function TypingDone({ text, speed, onDone }) {
-  useEffect(() => {
-    const t = setTimeout(onDone, text.length * speed + 50);
-    return () => clearTimeout(t);
-  }, [text, speed, onDone]);
-  return null;
-}
-
-function StepLog({ step }) {
-  const [done, setDone] = useState([]);
-  const [cur, setCur] = useState(0);
-  useEffect(() => { setDone([]); setCur(0); }, [step.id]);
-  const onDone = () => { setDone(prev => [...prev, step.lines[cur]]); setCur(prev => prev + 1); };
-
-  return (
-    <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.3 }} className="ml-10 sm:ml-12 mt-2">
-      <div className="bg-brand-900/95 backdrop-blur-xl rounded-xl p-3.5 terminal-glow">
-        <div className="flex items-center gap-1.5 mb-2">
-          <span className="w-2 h-2 rounded-full bg-red-400/80" />
-          <span className="w-2 h-2 rounded-full bg-amber-400/80" />
-          <span className="w-2 h-2 rounded-full bg-green-400/80" />
-          <span className="ml-2 text-[10px] text-slate-500 font-mono">psx-agent — step {step.id}/5</span>
-        </div>
-        <div className="space-y-0.5 text-emerald-400/90">
-          {done.map((l, i) => <div key={i} className="font-mono text-xs opacity-50">{l}</div>)}
-          {cur < step.lines.length && (
-            <div className="text-emerald-300">
-              <Typewriter text={step.lines[cur]} speed={18} key={`${step.id}-${cur}`} />
-              <TypingDone text={step.lines[cur]} speed={18} onDone={onDone} />
-            </div>
-          )}
-        </div>
-      </div>
-    </motion.div>
-  );
-}
-
-export default function AgentTrace({ isActive, isCompleted, isError, errorMsg }) {
-  const [cur, setCur] = useState(-1);
-  const [completed, setCompleted] = useState(new Set());
+export default function AgentTrace({ isActive, isCompleted, isError, errorMsg, progressMessages = [] }) {
   const [elapsed, setElapsed] = useState(0);
   const ref = useRef(null);
   const timerRef = useRef(null);
-  const stepRef = useRef(null);
 
+  // ── Elapsed timer ──────────────────────────────────────
   useEffect(() => {
-    if (isActive) { const t0 = Date.now(); timerRef.current = setInterval(() => setElapsed(Math.floor((Date.now() - t0) / 1000)), 1000); }
+    if (isActive) {
+      const t0 = Date.now();
+      timerRef.current = setInterval(() => setElapsed(Math.floor((Date.now() - t0) / 1000)), 1000);
+    }
     if (isCompleted || isError) clearInterval(timerRef.current);
     return () => clearInterval(timerRef.current);
   }, [isActive, isCompleted, isError]);
 
-  useEffect(() => {
-    if (!isActive) return;
-    setCur(0); setCompleted(new Set());
-    let s = 0;
-    const advance = () => { setCompleted(p => new Set([...p, s])); s++; if (s < STEPS.length) { setCur(s); stepRef.current = setTimeout(advance, STEP_MS); } };
-    stepRef.current = setTimeout(advance, STEP_MS);
-    return () => clearTimeout(stepRef.current);
-  }, [isActive]);
+  // ── Derive step states from SSE messages ──────────────
+  const currentStep = useMemo(() => {
+    let maxStep = 0;
+    for (const msg of progressMessages) {
+      const s = messageToStep(msg);
+      if (s > maxStep) maxStep = s;
+    }
+    return maxStep;
+  }, [progressMessages]);
 
-  useEffect(() => {
-    if (isCompleted) { clearTimeout(stepRef.current); setCompleted(new Set(STEPS.map((_, i) => i))); setCur(STEPS.length); }
-  }, [isCompleted]);
+  // Steps 1 & 2 are concurrent, so when step 3 is reached, both 1 & 2 are done
+  const completedSteps = useMemo(() => {
+    const set = new Set();
+    if (isCompleted) {
+      STEPS.forEach((_, i) => set.add(i));
+      return set;
+    }
+    for (let i = 0; i < STEPS.length; i++) {
+      const stepNum = STEPS[i].id;
+      if (stepNum < currentStep) set.add(i);
+      // Steps 1 & 2 both complete when step 3 starts
+      if (stepNum <= 2 && currentStep >= 3) set.add(i);
+    }
+    return set;
+  }, [currentStep, isCompleted]);
 
-  useEffect(() => { ref.current?.scrollTo({ top: ref.current.scrollHeight, behavior: 'smooth' }); }, [cur, completed.size]);
+  const pct = isCompleted ? 100 : Math.min(((completedSteps.size + (currentStep > 0 && !isCompleted ? 0.5 : 0)) / STEPS.length) * 100, 99);
+
+  // ── Auto-scroll ────────────────────────────────────────
+  useEffect(() => { ref.current?.scrollTo({ top: ref.current.scrollHeight, behavior: 'smooth' }); }, [progressMessages.length, completedSteps.size]);
 
   const mm = (s) => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
-  const pct = isCompleted ? 100 : Math.min(((completed.size + (cur >= 0 && cur < STEPS.length ? 0.5 : 0)) / STEPS.length) * 100, 99);
 
   if (!isActive && !isCompleted && !isError) return null;
 
@@ -134,7 +99,7 @@ export default function AgentTrace({ isActive, isCompleted, isError, errorMsg })
               </div>
               <div>
                 <div className="text-sm font-bold text-brand-900 dark:text-white">{isCompleted ? 'Agent Complete' : isError ? 'Agent Error' : 'Agent Running'}</div>
-                <div className="text-[11px] text-slate-400 dark:text-slate-500">{isCompleted ? 'All tasks done' : isError ? 'Something went wrong' : 'Analyzing PSX market…'}</div>
+                <div className="text-[11px] text-slate-400 dark:text-slate-500">{isCompleted ? 'All tasks done' : isError ? 'Something went wrong' : 'Live progress via SSE…'}</div>
               </div>
             </div>
             <div className="flex items-center gap-1 text-xs font-mono text-slate-400 dark:text-slate-500"><Clock className="w-3 h-3" />{mm(elapsed)}</div>
@@ -146,8 +111,8 @@ export default function AgentTrace({ isActive, isCompleted, isError, errorMsg })
 
         <div ref={ref} className="px-5 py-4 max-h-[400px] overflow-y-auto no-scrollbar">
           {STEPS.map((step, i) => {
-            const isDone = completed.has(i);
-            const isCur = cur === i && !isCompleted;
+            const isDone = completedSteps.has(i);
+            const isCur = currentStep === step.id && !isDone && !isCompleted;
             const Icon = step.icon;
             return (
               <div key={step.id}>
@@ -166,10 +131,42 @@ export default function AgentTrace({ isActive, isCompleted, isError, errorMsg })
                     </div>
                   </div>
                 </motion.div>
-                <AnimatePresence>{isCur && <StepLog step={step} />}</AnimatePresence>
+
+                {/* Live terminal output for current step */}
+                <AnimatePresence>
+                  {isCur && (
+                    <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.3 }} className="ml-10 sm:ml-12 mt-2">
+                      <div className="bg-brand-900/95 backdrop-blur-xl rounded-xl p-3.5 terminal-glow">
+                        <div className="flex items-center gap-1.5 mb-2">
+                          <span className="w-2 h-2 rounded-full bg-red-400/80" />
+                          <span className="w-2 h-2 rounded-full bg-amber-400/80" />
+                          <span className="w-2 h-2 rounded-full bg-green-400/80" />
+                          <span className="ml-2 text-[10px] text-slate-500 font-mono">psx-agent — step {step.id}/5</span>
+                        </div>
+                        <div className="space-y-0.5 text-emerald-400/90">
+                          <div className="text-emerald-300">
+                            <Typewriter text={`→ ${step.detail}`} speed={18} key={`step-${step.id}`} />
+                          </div>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             );
           })}
+
+          {/* SSE message log */}
+          {progressMessages.length > 0 && (
+            <div className="mt-3 space-y-1">
+              {progressMessages.map((msg, i) => (
+                <motion.div key={i} initial={{ opacity: 0, x: -4 }} animate={{ opacity: 1, x: 0 }} className="flex items-center gap-2 text-[11px] font-mono text-slate-400 dark:text-slate-500">
+                  <span className="w-1 h-1 rounded-full bg-indigo-400/60 flex-shrink-0" />
+                  <span>{msg}</span>
+                </motion.div>
+              ))}
+            </div>
+          )}
 
           {isError && errorMsg && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-3 p-3 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/40 text-xs text-red-600 dark:text-red-400 font-medium flex items-start gap-2">

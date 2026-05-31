@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Play, Loader2, ShieldCheck, ShieldAlert, Shield, X, Plus } from 'lucide-react';
+import { Activity, BriefcaseBusiness, Play, Loader2, ShieldCheck, ShieldAlert, Shield, X, Plus } from 'lucide-react';
 
 const RISK = [
   { value: 'low', label: 'Conservative', Icon: ShieldCheck, ring: 'ring-emerald-300 dark:ring-emerald-700', bg: 'bg-emerald-50 dark:bg-emerald-900/30', text: 'text-emerald-600 dark:text-emerald-400', activeBg: 'bg-emerald-100 dark:bg-emerald-900/50 ring-2' },
@@ -12,6 +12,7 @@ export default function InputPanel({ onSubmit, isLoading }) {
   const [capital, setCapital] = useState('');
   const [positions, setPositions] = useState(3);
   const [risk, setRisk] = useState('medium');
+  const [mode, setMode] = useState('fundamental');
   const [tickerInput, setTickerInput] = useState('');
   const [tickers, setTickers] = useState([]);
   const [errors, setErrors] = useState({});
@@ -36,7 +37,7 @@ export default function InputPanel({ onSubmit, isLoading }) {
   const submit = (e) => {
     e.preventDefault();
     if (!validate() || isLoading) return;
-    onSubmit({ capital_pkr: raw(), max_positions: positions, risk_preference: risk, tickers_filter: tickers });
+    onSubmit({ capital_pkr: raw(), max_positions: positions, risk_preference: risk, investment_mode: mode, tickers_filter: tickers });
   };
 
   return (
@@ -92,6 +93,29 @@ export default function InputPanel({ onSubmit, isLoading }) {
                   <span className={`text-[11px] font-semibold ${r.text}`}>{r.label}</span>
                 </button>
               ))}
+            </div>
+          </div>
+
+          {/* Mode */}
+          <div>
+            <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-wider">Investment Mode</label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setMode('fundamental')}
+                className={`flex items-center justify-center gap-2 py-3 rounded-xl border text-xs font-semibold transition-all duration-200 ${mode === 'fundamental' ? 'bg-sky-100 dark:bg-sky-900/50 text-sky-700 dark:text-sky-300 ring-2 ring-sky-300 dark:ring-sky-700 border-transparent' : 'bg-sky-50 dark:bg-sky-900/20 text-sky-600 dark:text-sky-400 border-transparent'}`}
+              >
+                <BriefcaseBusiness className="w-4 h-4" />
+                Fundamental
+              </button>
+              <button
+                type="button"
+                onClick={() => setMode('tactical')}
+                className={`flex items-center justify-center gap-2 py-3 rounded-xl border text-xs font-semibold transition-all duration-200 ${mode === 'tactical' ? 'bg-rose-100 dark:bg-rose-900/50 text-rose-700 dark:text-rose-300 ring-2 ring-rose-300 dark:ring-rose-700 border-transparent' : 'bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 border-transparent'}`}
+              >
+                <Activity className="w-4 h-4" />
+                Tactical
+              </button>
             </div>
           </div>
 

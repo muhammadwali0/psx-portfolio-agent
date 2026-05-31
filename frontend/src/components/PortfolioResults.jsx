@@ -9,7 +9,7 @@ const RISK_CLS = {
 };
 const up = (d) => ({ initial: { opacity: 0, y: 16 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.35, delay: d } });
 
-function Card({ pos, idx }) {
+function Card({ pos, idx, isFundamental }) {
   const [open, setOpen] = useState(false);
   const tk = String(pos.ticker || pos.symbol || '—');
   const co = String(pos.company_name || pos.company || pos.name || '');
@@ -17,8 +17,11 @@ function Card({ pos, idx }) {
   const cap = Number(pos.capital_pkr ?? pos.amount ?? 0);
   const shares = Number(pos.shares ?? pos.quantity ?? 0);
   const entry = Number(pos.entry_price ?? pos.price ?? 0);
-  const sl = pos.stop_loss ?? pos.stoploss ?? null;
-  const tp = pos.target_price ?? pos.target ?? null;
+  const sl = isFundamental ? null : (pos.stop_loss ?? pos.stoploss ?? null);
+  const tp = isFundamental ? null : (pos.target_price ?? pos.target ?? null);
+  const triggers = isFundamental
+    ? (Array.isArray(pos.rebalancing_triggers) ? pos.rebalancing_triggers : []).filter(Boolean)
+    : [];
   const risk = String(pos.risk_level ?? pos.risk ?? 'medium').toLowerCase();
   const just = String(pos.justification ?? pos.reasoning ?? pos.rationale ?? '');
   const rc = RISK_CLS[risk] || RISK_CLS.medium;
@@ -84,7 +87,16 @@ function Card({ pos, idx }) {
         </div>
       )}
 
-
+      {triggers.length > 0 && (
+        <div className="mt-1.5 bg-violet-50/70 dark:bg-violet-900/20 rounded-lg p-2.5">
+          <div className="text-[9px] font-semibold text-violet-500 dark:text-violet-400 mb-1.5">Rebalancing triggers</div>
+          <ul className="space-y-1">
+            {triggers.map((t) => (
+              <li key={t} className="text-[11px] text-slate-600 dark:text-slate-400 leading-snug">• {t}</li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {just && (
         <div className="mt-3 pt-3 border-t border-slate-100/80 dark:border-slate-700/40">
@@ -108,6 +120,8 @@ function Card({ pos, idx }) {
 export default function PortfolioResults({ data }) {
   if (!data) return null;
   const p = data.portfolio || data;
+  const mode = String(p.investment_mode || data.investment_mode || 'fundamental').toLowerCase();
+  const isFundamental = mode === 'fundamental';
   const pos = p.positions || p.holdings || [];
   if (!Array.isArray(pos) || !pos.length) {
     return (
@@ -127,7 +141,7 @@ export default function PortfolioResults({ data }) {
           <span className="ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400">{pos.length} stocks</span>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {pos.map((p, i) => <Card key={p.ticker || p.symbol || i} pos={p} idx={i} />)}
+          {pos.map((p, i) => <Card key={p.ticker || p.symbol || i} pos={p} idx={i} isFundamental={isFundamental} />)}
         </div>
       </div>
     </section>

@@ -69,6 +69,7 @@ export async function startPortfolioRun(params) {
     capital_pkr: params.capital_pkr,
     max_positions: params.max_positions,
     risk_preference: params.risk_preference,
+    investment_mode: params.investment_mode || 'fundamental',
     tickers_filter: params.tickers_filter || [],
   });
   return res.data;
@@ -84,6 +85,14 @@ export async function getPortfolioStatus(runId) {
   }
   const res = await api.get(`/portfolio/${runId}`);
   return res.data;
+}
+
+/**
+ * Builds the SSE stream URL for a given run ID.
+ * Uses /api/v1 prefix which is proxied by Vite in dev.
+ */
+export function getSSEStreamUrl(runId) {
+  return `/api/v1/portfolio/run/stream/${runId}`;
 }
 
 export default api;

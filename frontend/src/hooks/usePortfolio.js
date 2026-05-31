@@ -1,111 +1,124 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { startPortfolioRun, getPortfolioStatus } from '../api/portfolio';
+import { startPortfolioRun, getPortfolioStatus, getSSEStreamUrl } from '../api/portfolio';
 import toast from 'react-hot-toast';
 
-const POLL_INTERVAL = 2000;
-const MAX_POLLS = 90;
+const SSE_TIMEOUT_MS = 180_000; // 3 minute hard timeout
 
 export function usePortfolio() {
-  const [status, setStatus] = useState('idle');
+  const [status, setStatus] = useState('idle');        // idle | loading | streaming | completed | error
   const [runId, setRunId] = useState(null);
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
-  const [pollCount, setPollCount] = useState(0);
-  const pollRef = useRef(null);
+  const [progressMessages, setProgressMessages] = useState([]);   // live SSE messages
+  const eventSourceRef = useRef(null);
   const abortRef = useRef(false);
-  const pollCountRef = useRef(0);
+  const timeoutRef = useRef(null);
 
-  const stopPolling = useCallback(() => {
-    if (pollRef.current) {
-      clearTimeout(pollRef.current);
-      pollRef.current = null;
+  const closeSSE = useCallback(() => {
+    if (eventSourceRef.current) {
+      eventSourceRef.current.close();
+      eventSourceRef.current = null;
+    }
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
     }
   }, []);
 
-  const pollStatus = useCallback(async (id) => {
+  /**
+   * Opens an EventSource to the SSE endpoint and listens for live progress.
+   * When "COMPLETE" is received, fetches the final result via GET.
+   */
+  const connectSSE = useCallback((id) => {
     if (abortRef.current) return;
 
-    try {
-      const data = await getPortfolioStatus(id);
-      pollCountRef.current += 1;
-      setPollCount(pollCountRef.current);
+    const url = getSSEStreamUrl(id);
+    const es = new EventSource(url);
+    eventSourceRef.current = es;
 
-      if (data.status === 'completed') {
-        setResult(data);
-        setStatus('completed');
-        stopPolling();
-        toast.success('Portfolio constructed successfully!');
+    // Hard timeout — if SSE stream never completes
+    timeoutRef.current = setTimeout(() => {
+      closeSSE();
+      setError('Request timed out. Please try again.');
+      setStatus('error');
+      toast.error('Request timed out.');
+    }, SSE_TIMEOUT_MS);
+
+    es.onmessage = async (event) => {
+      const msg = event.data;
+
+      if (msg === 'COMPLETE') {
+        closeSSE();
+        try {
+          const data = await getPortfolioStatus(id);
+          setResult(data);
+          setStatus('completed');
+          toast.success('Portfolio constructed successfully!');
+        } catch (err) {
+          setError('Failed to fetch results.');
+          setStatus('error');
+          toast.error('Failed to fetch final results.');
+        }
         return;
       }
 
-      if (data.status === 'failed' || data.status === 'error') {
-        setError(data.error || data.message || 'Portfolio construction failed.');
+      if (msg.startsWith('FAILED:')) {
+        closeSSE();
+        const failMsg = msg.replace(/^FAILED:\s*/, '');
+        setError(failMsg || 'Portfolio construction failed.');
         setStatus('error');
-        stopPolling();
         toast.error('Portfolio construction failed.');
         return;
       }
 
-      if (pollCountRef.current >= MAX_POLLS) {
-        setError('Request timed out. Please try again.');
-        setStatus('error');
-        stopPolling();
-        toast.error('Request timed out.');
-        return;
-      }
+      // Regular progress message
+      setProgressMessages((prev) => [...prev, msg]);
+    };
 
-      pollRef.current = setTimeout(() => pollStatus(id), POLL_INTERVAL);
-    } catch (err) {
-      if (pollCountRef.current < MAX_POLLS) {
-        pollRef.current = setTimeout(() => pollStatus(id), POLL_INTERVAL);
-      } else {
-        setError(err.response?.data?.detail || err.message || 'Polling failed.');
-        setStatus('error');
-        stopPolling();
-      }
-    }
-  }, [stopPolling]);
+    es.onerror = () => {
+      // EventSource reconnects automatically on transient errors.
+      // If the connection is truly dead, the timeout will catch it.
+    };
+  }, [closeSSE]);
 
   const runAgent = useCallback(async (params) => {
     abortRef.current = false;
-    pollCountRef.current = 0;
     setStatus('loading');
     setError(null);
     setResult(null);
-    setPollCount(0);
-    stopPolling();
+    setProgressMessages([]);
+    closeSSE();
 
     try {
       const data = await startPortfolioRun(params);
       if (!data.run_id) throw new Error('No run_id received from API.');
 
       setRunId(data.run_id);
-      setStatus('polling');
+      setStatus('streaming');
       toast('AI Agent initiated...', { icon: '🤖' });
 
-      pollRef.current = setTimeout(() => pollStatus(data.run_id), POLL_INTERVAL);
+      connectSSE(data.run_id);
     } catch (err) {
       const message = err.response?.data?.detail || err.response?.data?.message || err.message || 'Failed to start agent.';
       setError(typeof message === 'string' ? message : JSON.stringify(message));
       setStatus('error');
       toast.error('Failed to start agent.');
     }
-  }, [stopPolling, pollStatus]);
+  }, [closeSSE, connectSSE]);
 
   const reset = useCallback(() => {
     abortRef.current = true;
-    stopPolling();
+    closeSSE();
     setStatus('idle');
     setRunId(null);
     setResult(null);
     setError(null);
-    setPollCount(0);
-    pollCountRef.current = 0;
-  }, [stopPolling]);
+    setProgressMessages([]);
+  }, [closeSSE]);
 
   useEffect(() => {
-    return () => { abortRef.current = true; stopPolling(); };
-  }, [stopPolling]);
+    return () => { abortRef.current = true; closeSSE(); };
+  }, [closeSSE]);
 
-  return { status, runId, result, error, pollCount, runAgent, reset };
+  return { status, runId, result, error, progressMessages, runAgent, reset };
 }
