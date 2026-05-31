@@ -1,0 +1,52 @@
+# Cloud Build: deploy nightly PSX historical download Cloud Run Job.
+# Schedule separately with Cloud Scheduler (see deploy/historical-scheduler.sh).
+#
+# 4:30pm PKT = 11:30 UTC (Asia/Karachi, UTC+5, no DST).
+
+steps:
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      - build
+      - -t
+      - "$_REGION-docker.pkg.dev/$PROJECT_ID/$_REPO/$_JOB_IMAGE:$COMMIT_SHA"
+      - -t
+      - "$_REGION-docker.pkg.dev/$PROJECT_ID/$_REPO/$_JOB_IMAGE:latest"
+      - .
+
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      - push
+      - --all-tags
+      - "$_REGION-docker.pkg.dev/$PROJECT_ID/$_REPO/$_JOB_IMAGE"
+
+  - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
+    entrypoint: gcloud
+    args:
+      - run
+      - jobs
+      - deploy
+      - "$_JOB_NAME"
+      - --image=$_REGION-docker.pkg.dev/$PROJECT_ID/$_REPO/$_JOB_IMAGE:$COMMIT_SHA
+      - --region=$_REGION
+      - --memory=512Mi
+      - --cpu=1
+      - --max-retries=2
+      - --task-timeout=30m
+      - --command=python
+      - --args=-m,app.historical.job
+      - --set-env-vars=HISTORICAL_DB_PATH=/data/psx_history.db
+      - --add-volume=name=historical-data,type=cloud-storage,bucket=$_GCS_BUCKET
+      - --add-volume-mount=volume=historical-data,mount-path=/data
+
+substitutions:
+  _REGION: us-central1
+  _REPO: psx-agent
+  _JOB_NAME: psx-historical-download
+  _JOB_IMAGE: psx-historical-download
+  _GCS_BUCKET: psx-agent-historical-db
+
+images:
+  - "$_REGION-docker.pkg.dev/$PROJECT_ID/$_REPO/$_JOB_IMAGE:$COMMIT_SHA"
+
+options:
+  logging: CLOUD_LOGGING_ONLY
