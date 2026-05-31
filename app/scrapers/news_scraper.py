@@ -160,6 +160,11 @@ class NewsScraper(BaseScraper):
     async def scrape(self) -> list[NewsArticle]:
         """Aggregate news from all configured sources concurrently."""
         logger.info("news_scraper.start")
+        from app.cache import RedisCache
+        cache = RedisCache.get_instance()
+        cached = cache.get_news_articles()
+        if cached:
+            return cached
 
         tasks = [
             self._scrape_dawn(),
@@ -181,6 +186,7 @@ class NewsScraper(BaseScraper):
                     articles.append(art)
 
         logger.info("news_scraper.done", total=len(articles))
+        cache.set_news_articles(articles)
         return articles
 
     async def scrape_article_text(self, url: str) -> str:

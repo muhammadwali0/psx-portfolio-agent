@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import asyncio
 import random
+import re
 from abc import ABC, abstractmethod
 from typing import Any
 
@@ -53,7 +54,7 @@ class BaseScraper(ABC):
 
     # ── Client lifecycle ──────────────────────────────────────────────────────
 
-    async def __aenter__(self) -> "BaseScraper":
+    async def __aenter__(self) -> BaseScraper:
         self._client = httpx.AsyncClient(
             timeout=self.timeout,
             follow_redirects=True,
@@ -118,3 +119,18 @@ class BaseScraper(ABC):
     async def scrape(self) -> Any:
         """Entry point for concrete scrapers. Returns domain-specific data."""
         ...
+
+def parse_float(text: str | None, fallback: float = 0.0) -> float:
+    if not text:
+        return fallback
+    cleaned = re.sub(r"[^\d.\-]", "", text.strip())
+    if cleaned.count("-") > 1:
+        cleaned = cleaned.replace("-", "")
+    try:
+        return float(cleaned)
+    except ValueError:
+        return fallback
+
+
+def parse_int(text: str | None, fallback: int = 0) -> int:
+    return int(parse_float(text, float(fallback)))
