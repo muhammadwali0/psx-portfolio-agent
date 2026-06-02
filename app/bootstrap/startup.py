@@ -8,9 +8,11 @@ from zoneinfo import ZoneInfo
 
 from app.bootstrap.precompute import attach_historical_to_snapshot, build_precomputed_aggregates
 from app.data.store import MarketDataStore
+from app.historical.db import HistoricalDatabase
 from app.historical.download import DailyDownloadService
+from app.historical.news_store import NewsStore
 from app.logger import get_logger
-from app.models import DataManifest, DataQualityFlag, MarketSnapshot
+from app.models import DataManifest, DataQualityFlag, MarketSnapshot, NewsArticle
 from app.scrapers.corporate_scraper import CorporateScraper
 from app.scrapers.gis_scraper import GISScraper
 from app.scrapers.market_scraper import MarketScraper
@@ -65,6 +67,11 @@ async def _scrape_gis():
         return await scraper.scrape()
 
 
+async def _scrape_news() -> list[NewsArticle]:
+    async with NewsScraper() as scraper:
+        return await scraper.scrape()
+
+
 def _run_sqlite_ingest() -> dict[str, int]:
     service = DailyDownloadService()
     results = service.run()
@@ -91,6 +98,9 @@ async def run_bootstrap(*, skip_download: bool = False) -> DataManifest:
 
     # 1 — SQLite
     sqlite_rows: dict[str, int] = {}
+    hist_db = HistoricalDatabase()
+    hist_db.initialize()
+
     if not skip_download:
         try:
             sqlite_rows = await asyncio.to_thread(_run_sqlite_ingest)
@@ -110,38 +120,58 @@ async def run_bootstrap(*, skip_download: bool = False) -> DataManifest:
     else:
         sources["sqlite"] = DataQualityFlag(ok=True, message="skipped")
 
-    # 2 — Live scrapers
-    snapshot: MarketSnapshot | None = None
+    # 2 — Live scrapers + news (one scrape, Redis + SQLite consumers)
+    snapshot: MarketSnapshot = MarketSnapshot()
+    articles: list[NewsArticle] = []
+    news_scrape_ok = False
     try:
-        snapshot = await _fetch_live_snapshot()
-        sources["live_market"] = DataQualityFlag(
-            ok=len(snapshot.quotes) > 0,
-            message="Market watch quotes",
-            row_count=len(snapshot.quotes),
+        snapshot_result, news_result = await asyncio.gather(
+            _fetch_live_snapshot(),
+            _scrape_news(),
+            return_exceptions=True,
         )
-        sources["live_gis"] = DataQualityFlag(
-            ok=len(snapshot.gis) > 0,
-            message="GIS instruments",
-            row_count=len(snapshot.gis),
-        )
+
+        if isinstance(snapshot_result, Exception):
+            logger.error("bootstrap.live_scrape_failed", error=str(snapshot_result))
+            sources["live_market"] = DataQualityFlag(
+                ok=False, message=str(snapshot_result)
+            )
+        else:
+            snapshot = snapshot_result
+            sources["live_market"] = DataQualityFlag(
+                ok=len(snapshot.quotes) > 0,
+                message="Market watch quotes",
+                row_count=len(snapshot.quotes),
+            )
+            sources["live_gis"] = DataQualityFlag(
+                ok=len(snapshot.gis) > 0,
+                message="GIS instruments",
+                row_count=len(snapshot.gis),
+            )
+
+        if isinstance(news_result, Exception):
+            logger.warning("bootstrap.news_failed", error=str(news_result))
+            sources["news"] = DataQualityFlag(ok=False, message=str(news_result))
+        else:
+            articles = news_result
+            news_scrape_ok = True
     except Exception as exc:
         logger.error("bootstrap.live_scrape_failed", error=str(exc))
         sources["live_market"] = DataQualityFlag(ok=False, message=str(exc))
-        snapshot = snapshot or MarketSnapshot()
 
-    # News (cached for agent chain; not PSX DPS)
-    try:
-        async with NewsScraper() as news_scraper:
-            articles = await news_scraper.scrape()
+    if news_scrape_ok:
         store.set_news_articles(articles)
+        try:
+            inserted = NewsStore.upsert_articles(hist_db, articles)
+            NewsStore.prune_old_articles(hist_db, days=90)
+            logger.info("bootstrap.news_hydrated", inserted=inserted)
+        except Exception as exc:
+            logger.error("bootstrap.news_upsert_failed", error=str(exc), exc_info=True)
         sources["news"] = DataQualityFlag(
             ok=len(articles) > 0,
             message="Business news",
             row_count=len(articles),
         )
-    except Exception as exc:
-        logger.warning("bootstrap.news_failed", error=str(exc))
-        sources["news"] = DataQualityFlag(ok=False, message=str(exc))
 
     # 3 — Pre-compute (SQLite read once)
     aggregates = build_precomputed_aggregates(snapshot)
@@ -153,6 +183,16 @@ async def run_bootstrap(*, skip_download: bool = False) -> DataManifest:
     from app.historical.query import HistoricalDataService
 
     sqlite_as_of = HistoricalDataService().latest_ohlcv_date()
+
+    try:
+        news_count = NewsStore.count_recent(hist_db, days=90)
+    except Exception:
+        news_count = 0
+    sources["news_historical"] = DataQualityFlag(
+        ok=True,
+        message="News articles in SQLite",
+        row_count=news_count,
+    )
 
     manifest = DataManifest(
         last_updated=now,

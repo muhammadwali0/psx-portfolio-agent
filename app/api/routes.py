@@ -29,6 +29,7 @@ from app.logger import get_logger
 from app.models import (
     AgentRun,
     DataManifest,
+    DataQualityFlag,
     HealthResponse,
     PrecomputedAggregates,
     RiskLevel,
@@ -74,6 +75,26 @@ async def data_manifest() -> DataManifest:
     manifest = store.get_manifest()
     if not manifest:
         raise HTTPException(status_code=503, detail="Bootstrap not complete.")
+
+    try:
+        from app.historical.db import HistoricalDatabase
+        from app.historical.news_store import NewsStore
+
+        db = HistoricalDatabase()
+        db.initialize()
+        row_count = NewsStore.count_recent(db, days=90)
+        manifest.sources["news_historical"] = DataQualityFlag(
+            ok=row_count > 0,
+            message="News articles in SQLite",
+            row_count=row_count,
+        )
+    except Exception:
+        manifest.sources["news_historical"] = DataQualityFlag(
+            ok=False,
+            message="News articles in SQLite",
+            row_count=0,
+        )
+
     return manifest
 
 

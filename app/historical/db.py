@@ -61,10 +61,26 @@ CREATE TABLE IF NOT EXISTS ingest_meta (
     value TEXT NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS news_articles (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    url         TEXT NOT NULL UNIQUE,
+    title       TEXT NOT NULL,
+    summary     TEXT,
+    source      TEXT NOT NULL,
+    published_at TEXT NOT NULL,
+    scraped_at  TEXT NOT NULL,
+    category    TEXT NOT NULL DEFAULT 'corporate',
+    tickers_mentioned TEXT NOT NULL DEFAULT '[]',
+    keywords    TEXT NOT NULL DEFAULT '[]',
+    relevance_score REAL NOT NULL DEFAULT 0.0
+);
+
 CREATE INDEX IF NOT EXISTS idx_ohlcv_symbol_date ON daily_ohlcv(symbol, date);
 CREATE INDEX IF NOT EXISTS idx_index_const_index_date ON index_constituents(index_name, date);
 CREATE INDEX IF NOT EXISTS idx_gis_symbol_date ON gis_rates(symbol, date);
 CREATE INDEX IF NOT EXISTS idx_futures_symbol_date ON futures_open_interest(symbol, date);
+CREATE INDEX IF NOT EXISTS idx_news_published_at ON news_articles(published_at DESC);
+CREATE INDEX IF NOT EXISTS idx_news_category ON news_articles(category);
 """
 
 

@@ -24,6 +24,8 @@ import google.generativeai as genai
 from google.generativeai.types import GenerationConfig
 
 from app.config import get_settings
+from app.historical.db import HistoricalDatabase
+from app.historical.news_context import NewsContextBuilder
 from app.logger import get_logger
 from app.data.store import MarketDataStore
 from app.models import (
@@ -488,6 +490,22 @@ class GeminiAgent:
             signal_symbols = list({s.ticker for s in signals})
             technicals_block = _fmt_symbol_technicals(aggregates, signal_symbols)
 
+        news_context_str = ""
+        try:
+            db = HistoricalDatabase()
+            sectors = [q.sector for q in snapshot.quotes if q.sector]
+            sectors = list(set(sectors))[:10]
+            news_context = NewsContextBuilder().build(
+                db, sectors, investment_mode.value
+            )
+            news_context_str = NewsContextBuilder.format_for_prompt(news_context)
+        except Exception:
+            news_context_str = ""
+
+        news_block = ""
+        if news_context_str:
+            news_block = f"\n{news_context_str}\n"
+
         return textwrap.dedent(f"""
             ## PSX Portfolio Construction Task
 
@@ -505,7 +523,7 @@ class GeminiAgent:
             {precomputed_block}
             {technicals_block}
             {shariah_block}
-
+            {news_block}
             ### Bullish Signals ({len(bull)})
             {_fmt_signals(bull)}
 

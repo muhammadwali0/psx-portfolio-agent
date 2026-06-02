@@ -13,7 +13,8 @@ import PositionCard from '../components/portfolio/PositionCard';
 import AIReasoningTrace from '../components/portfolio/AIReasoningTrace';
 import ScenarioSimulator from '../components/portfolio/ScenarioSimulator';
 import PortfolioExport from '../components/portfolio/PortfolioExport';
-import type { RiskLevel, InvestmentMode, RunPortfolioRequest, AgentRun } from '../api/types';
+import ErrorState from '../components/shared/ErrorState';
+import type { RiskLevel, InvestmentMode, RunPortfolioRequest } from '../api/types';
 import { stagger } from '../design/animationTokens';
 
 export default function PortfolioScreen() {
@@ -55,10 +56,13 @@ export default function PortfolioScreen() {
       closeSSE();
       try {
         const data = await getPortfolioStatus(runId);
+        if (!data.portfolio) {
+          throw new Error('Portfolio generation completed without portfolio data');
+        }
         setPortfolioResult(data);
         setPortfolioStatus('completed');
-      } catch {
-        setPortfolioError('Failed to fetch results.');
+      } catch (err) {
+        setPortfolioError(extractError(err));
         setPortfolioStatus('error');
       }
     };
@@ -156,13 +160,7 @@ export default function PortfolioScreen() {
             <GenerateButton onClick={handleGenerate} loading={isRunning} />
 
             {isError && portfolioError && (
-              <motion.div
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="p-4 rounded-xl bg-loss/8 border border-loss/20 text-xs text-loss font-medium text-center"
-              >
-                {portfolioError}
-              </motion.div>
+              <ErrorState message={portfolioError} onRetry={handleGenerate} />
             )}
           </motion.div>
         )}

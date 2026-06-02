@@ -8,6 +8,7 @@ import TypingIndicator from '../components/chat/TypingIndicator';
 import SuggestionChips from '../components/chat/SuggestionChips';
 import ChatInput from '../components/chat/ChatInput';
 import EmptyState from '../components/shared/EmptyState';
+import ErrorState from '../components/shared/ErrorState';
 import { MessageSquare } from 'lucide-react';
 
 export default function ChatScreen() {
@@ -33,7 +34,6 @@ export default function ChatScreen() {
       addMessage({ id: `a-${Date.now()}`, role: 'assistant', content: reply, timestamp: Date.now() });
     } catch (err) {
       setError(extractError(err));
-      addMessage({ id: `e-${Date.now()}`, role: 'assistant', content: 'I apologize, but I\'m unable to respond right now. Please try again.', timestamp: Date.now() });
     } finally {
       setChatLoading(false);
     }
@@ -74,6 +74,12 @@ export default function ChatScreen() {
       {messages.length > 0 && !chatLoading && (
         <div className="px-5 pb-1">
           <SuggestionChips onSelect={handleSend} compact />
+        </div>
+      )}
+
+      {error && (
+        <div className="section-px pb-2">
+          <ErrorState message={error} onRetry={() => setError('')} />
         </div>
       )}
 
