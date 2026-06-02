@@ -80,7 +80,7 @@ export default function DonutChart({ segments, size = 160, thickness = 18, cente
         ctx.textBaseline = 'middle';
         
         // Premium accent color for value, matching active mode
-        ctx.fillStyle = shariahMode ? '#2D9F6F' : '#22C55E';
+        ctx.fillStyle = shariahMode ? '#D4AF37' : '#3B82F6';
         ctx.font = `700 ${size * 0.15}px "Plus Jakarta Sans", "Inter", sans-serif`;
         ctx.fillText(centerValue, cx, centerLabel ? cy - 6 : cy);
         

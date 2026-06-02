@@ -29,10 +29,10 @@ export default function RiskSelector({ value, onChange }: Props) {
               type="button"
               whileTap={{ scale: 0.96 }}
               onClick={() => onChange(opt.value)}
-              className={`flex flex-col items-center gap-1.5 py-3.5 rounded-xl border transition-all duration-200 ${isActive ? opt.bgActive : `${opt.bg} border-psx-500/10`}`}
+              className={`flex flex-col items-center gap-1.5 py-3.5 rounded-xl border transition-all duration-200 ${isActive ? `${opt.bgActive} shadow-sm border-current` : `${opt.bg} border-psx-500/30 dark:border-psx-500/10`}`}
             >
               <Icon className={`w-5 h-5 ${isActive ? opt.color : 'text-psx-400'}`} />
-              <span className={`text-[10px] font-semibold ${isActive ? opt.color : 'text-psx-400'}`}>
+              <span className={`text-[10px] font-semibold ${isActive ? opt.color : 'text-psx-300'}`}>
                 {shariahMode ? opt.shariahLabel : opt.label}
               </span>
             </motion.button>

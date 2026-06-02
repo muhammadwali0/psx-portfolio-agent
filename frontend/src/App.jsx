@@ -24,6 +24,7 @@ function ScreenRouter() {
 export default function App() {
   const splashDone = useStore((s) => s.splashDone);
   const theme = useStore((s) => s.theme);
+  const shariahMode = useStore((s) => s.shariahMode);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -33,6 +34,15 @@ export default function App() {
       root.classList.remove('light');
     }
   }, [theme]);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    if (shariahMode) {
+      root.classList.add('shariah');
+    } else {
+      root.classList.remove('shariah');
+    }
+  }, [shariahMode]);
 
   return (
     <>

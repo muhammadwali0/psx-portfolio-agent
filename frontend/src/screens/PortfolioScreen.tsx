@@ -199,14 +199,46 @@ export default function PortfolioScreen() {
               <h2 className="text-lg font-heading font-bold text-psx-50 mb-4">Your Portfolio</h2>
               <div className="grid grid-cols-2 gap-2 mb-5">
                 {[
-                  portfolio.sharpe_ratio != null && { label: 'Sharpe', value: portfolio.sharpe_ratio.toFixed(2) },
-                  portfolio.expected_return_pct != null && { label: 'Expected Return', value: `${portfolio.expected_return_pct.toFixed(1)}%` },
-                  { label: 'Cash Held', value: `${(portfolio.cash_pct ?? 0).toFixed(1)}%` },
-                  { label: 'Positions', value: String(pPositions.length) },
+                  { 
+                    label: 'Portfolio Value', 
+                    value: `₨${(portfolio.total_capital_pkr || capital).toLocaleString('en-PK', { maximumFractionDigits: 0 })}`,
+                    color: 'text-blue-500 dark:text-blue-400',
+                    border: 'border-t-blue-500/30'
+                  },
+                  portfolio.expected_return_pct != null && { 
+                    label: 'Expected Return', 
+                    value: `${portfolio.expected_return_pct.toFixed(1)}%`,
+                    color: 'text-purple-500 dark:text-purple-400',
+                    border: 'border-t-purple-500/30'
+                  },
+                  { 
+                    label: 'Diversification', 
+                    value: `${(100 - (portfolio.cash_pct ?? 0)).toFixed(0)}% Equities`,
+                    color: 'text-cyan-500 dark:text-cyan-400',
+                    border: 'border-t-cyan-500/30'
+                  },
+                  portfolio.sharpe_ratio != null && { 
+                    label: 'Risk (Sharpe)', 
+                    value: portfolio.sharpe_ratio.toFixed(2),
+                    color: 'text-amber-500 dark:text-amber-400',
+                    border: 'border-t-amber-500/30'
+                  },
+                  { 
+                    label: 'Performance', 
+                    value: 'Optimal',
+                    color: 'text-emerald-500 dark:text-emerald-400',
+                    border: 'border-t-emerald-500/30'
+                  },
+                  shariahMode && { 
+                    label: 'Shariah Metrics', 
+                    value: '100% Halal',
+                    color: 'text-gold-light',
+                    border: 'border-t-gold/35'
+                  },
                 ].filter(Boolean).map((s: any) => (
-                  <div key={s.label} className="glass-card p-3 rounded-xl">
+                  <div key={s.label} className={`glass-card p-3 rounded-xl border-t-2 ${s.border}`}>
                     <p className="text-[9px] text-psx-400 uppercase tracking-wider mb-1">{s.label}</p>
-                    <p className="text-lg font-financial font-bold text-psx-50">{s.value}</p>
+                    <p className={`text-lg font-financial font-bold ${s.color}`}>{s.value}</p>
                   </div>
                 ))}
               </div>

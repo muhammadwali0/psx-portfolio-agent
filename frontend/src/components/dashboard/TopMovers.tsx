@@ -4,6 +4,7 @@ import { TrendingUp, TrendingDown } from 'lucide-react';
 import GlassCard from '../shared/GlassCard';
 import type { MoverQuote } from '../../api/types';
 import { stagger } from '../../design/animationTokens';
+import { mapSector } from '../../utils/sectorMapper';
 
 interface Props {
   movers: MoverQuote[];
@@ -52,7 +53,7 @@ export default function TopMovers({ movers }: Props) {
                   </div>
                   <div className="min-w-0">
                     <p className="text-[11px] font-bold text-psx-50 truncate">{m.symbol}</p>
-                    <p className="text-[9px] text-psx-400 truncate">{m.sector || m.company_name}</p>
+                    <p className="text-[9px] text-psx-400 truncate">{mapSector(m.sector) || m.company_name}</p>
                   </div>
                 </div>
                 <div className="text-sm font-financial font-bold text-psx-50 mb-1">

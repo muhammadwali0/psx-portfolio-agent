@@ -21,15 +21,13 @@ export default function ChatBubble({ message }: Props) {
       <div
         className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 border ${
           isUser
-            ? 'bg-psx-800 border-psx-500/10'
-            : shariahMode
-              ? 'bg-shariah/8 border-shariah/10'
-              : 'bg-gold/8 border-gold/10'
+            ? 'bg-psx-800 border-psx-500/30 dark:border-psx-500/10'
+            : 'bg-primary/10 border-primary/20'
         }`}
       >
         {isUser
           ? <User className="w-3.5 h-3.5 text-psx-300" />
-          : <Bot className={`w-3.5 h-3.5 ${shariahMode ? 'text-shariah-light' : 'text-gold'}`} />
+          : <Bot className="w-3.5 h-3.5 text-primary" />
         }
       </div>
 
@@ -37,8 +35,8 @@ export default function ChatBubble({ message }: Props) {
       <div className={`max-w-[80%] ${isUser ? 'text-right' : ''}`}>
         <div className={`inline-block px-4 py-3 rounded-2xl text-[13px] leading-relaxed ${
           isUser
-            ? 'bg-psx-600 text-psx-50 rounded-tr-md border border-psx-500/20'
-            : 'bg-psx-800 text-psx-100 border border-psx-500/10 rounded-tl-md'
+            ? 'bg-primary text-selected rounded-tr-md border border-primary/20 shadow-sm'
+            : 'bg-psx-800 text-psx-100 border border-psx-500/30 dark:border-psx-500/10 rounded-tl-md'
         }`}>
           <p className="whitespace-pre-wrap">{message.content}</p>
         </div>

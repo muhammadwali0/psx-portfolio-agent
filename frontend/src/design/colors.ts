@@ -6,112 +6,112 @@
 export const colors = {
   /* ── Backgrounds ─────────────────────────────── */
   bg: {
-    primary: '#0B0B0C',
-    secondary: '#111114',
-    tertiary: '#18181B',
-    card: 'rgba(255, 255, 255, 0.04)',
-    cardHover: 'rgba(255, 255, 255, 0.06)',
-    elevated: 'rgba(255, 255, 255, 0.08)',
-    glass: 'rgba(255, 255, 255, 0.03)',
-    glassStrong: 'rgba(255, 255, 255, 0.06)',
+    primary: 'var(--color-bg-primary, #0B1020)',
+    secondary: 'var(--color-bg-secondary, #121A2B)',
+    tertiary: 'var(--color-bg-tertiary, #182338)',
+    card: 'var(--color-bg-card, rgba(255, 255, 255, 0.04))',
+    cardHover: 'var(--glass-card-hover-bg, rgba(255, 255, 255, 0.06))',
+    elevated: 'var(--color-bg-elevated, rgba(255, 255, 255, 0.08))',
+    glass: 'var(--glass-bg, rgba(255, 255, 255, 0.03))',
+    glassStrong: 'var(--glass-strong-bg, rgba(255, 255, 255, 0.06))',
     overlay: 'rgba(0, 0, 0, 0.6)',
-    input: 'rgba(255, 255, 255, 0.05)',
+    input: 'var(--color-bg-card, rgba(255, 255, 255, 0.05))',
   },
 
   /* ── Text ────────────────────────────────────── */
   text: {
-    primary: '#F8F9FA',
-    secondary: '#A1A1AA',
-    tertiary: '#71717A',
-    muted: '#52525B',
-    inverse: '#0B0B0C',
+    primary: 'var(--color-psx-50, #F8F9FA)',
+    secondary: 'var(--color-psx-200, #A1A1AA)',
+    tertiary: 'var(--color-psx-300, #71717A)',
+    muted: 'var(--color-psx-400, #52525B)',
+    inverse: 'var(--color-psx-900, #0B0B0C)',
   },
 
   /* ── Borders ─────────────────────────────────── */
   border: {
-    primary: 'rgba(255, 255, 255, 0.08)',
-    secondary: 'rgba(255, 255, 255, 0.05)',
-    focus: 'rgba(255, 255, 255, 0.20)',
-    subtle: 'rgba(255, 255, 255, 0.03)',
+    primary: 'var(--glass-border, rgba(255, 255, 255, 0.08))',
+    secondary: 'var(--glass-card-border, rgba(255, 255, 255, 0.05))',
+    focus: 'var(--color-primary, rgba(255, 255, 255, 0.20))',
+    subtle: 'var(--glass-border, rgba(255, 255, 255, 0.03))',
   },
 
   /* ── Semantic: Profit / Loss ─────────────────── */
   profit: {
-    DEFAULT: '#00C48C',
-    muted: 'rgba(0, 196, 140, 0.15)',
-    text: '#34D399',
-    bg: 'rgba(0, 196, 140, 0.08)',
+    DEFAULT: 'var(--color-profit, #10B981)',
+    muted: 'rgba(16, 185, 129, 0.15)',
+    text: 'var(--color-profit, #10B981)',
+    bg: 'rgba(16, 185, 129, 0.08)',
   },
   loss: {
-    DEFAULT: '#E63946',
-    muted: 'rgba(230, 57, 70, 0.15)',
-    text: '#FB7185',
-    bg: 'rgba(230, 57, 70, 0.08)',
+    DEFAULT: 'var(--color-loss, #EF4444)',
+    muted: 'rgba(239, 68, 68, 0.15)',
+    text: 'var(--color-loss, #EF4444)',
+    bg: 'rgba(239, 68, 68, 0.08)',
   },
   neutral: {
-    DEFAULT: '#71717A',
+    DEFAULT: 'var(--color-psx-300, #71717A)',
     muted: 'rgba(113, 113, 122, 0.15)',
-    text: '#A1A1AA',
+    text: 'var(--color-psx-200, #A1A1AA)',
     bg: 'rgba(113, 113, 122, 0.08)',
   },
 
   /* ── Accent ──────────────────────────────────── */
   accent: {
-    DEFAULT: '#F8F9FA',
-    secondary: '#A1A1AA',
-    subtle: 'rgba(248, 249, 250, 0.10)',
+    DEFAULT: 'var(--color-primary, #3B82F6)',
+    secondary: 'var(--color-secondary, #8B5CF6)',
+    subtle: 'var(--color-gold-muted, rgba(248, 249, 250, 0.10))',
   },
 
   /* ── Gold Accent (Premium CTA) ─────────────── */
   gold: {
-    DEFAULT: '#22C55E',
-    light: '#4ADE80',
-    dark: '#15803D',
-    muted: 'rgba(34, 197, 94, 0.15)',
-    bg: 'rgba(34, 197, 94, 0.08)',
-    text: '#22C55E',
-    glow: 'rgba(34, 197, 94, 0.25)',
+    DEFAULT: 'var(--color-gold, #D4AF37)',
+    light: 'var(--color-gold-light, #F4D03F)',
+    dark: 'var(--color-accent, #C9A227)',
+    muted: 'var(--color-gold-muted, rgba(212, 175, 55, 0.15))',
+    bg: 'var(--color-gold-bg, rgba(212, 175, 55, 0.08))',
+    text: 'var(--color-gold, #D4AF37)',
+    glow: 'rgba(212, 175, 55, 0.25)',
   },
 
   /* ── Shariah Mode ────────────────────────────── */
   shariah: {
-    primary: '#2D9F6F',
-    secondary: '#22C55E',
-    muted: 'rgba(45, 159, 111, 0.12)',
-    text: '#4ADE80',
-    bg: 'rgba(45, 159, 111, 0.06)',
-    accent: '#16A34A',
+    primary: 'var(--color-shariah, #D4AF37)',
+    secondary: 'var(--color-shariah-light, #F4D03F)',
+    muted: 'var(--color-shariah-muted, rgba(212, 175, 55, 0.12))',
+    text: 'var(--color-shariah-light, #F4D03F)',
+    bg: 'var(--color-shariah-bg, rgba(212, 175, 55, 0.06))',
+    accent: 'var(--color-accent, #C9A227)',
   },
 
   /* ── Status ──────────────────────────────────── */
   status: {
-    info: '#60A5FA',
-    infoBg: 'rgba(96, 165, 250, 0.08)',
-    warning: '#FBBF24',
-    warningBg: 'rgba(251, 191, 36, 0.08)',
-    error: '#EF4444',
+    info: 'var(--color-primary, #3B82F6)',
+    infoBg: 'rgba(59, 130, 246, 0.08)',
+    warning: 'var(--color-warning, #F59E0B)',
+    warningBg: 'rgba(245, 158, 11, 0.08)',
+    error: 'var(--color-loss, #EF4444)',
     errorBg: 'rgba(239, 68, 68, 0.08)',
-    success: '#22C55E',
-    successBg: 'rgba(34, 197, 94, 0.08)',
+    success: 'var(--color-profit, #10B981)',
+    successBg: 'rgba(16, 185, 129, 0.08)',
   },
 
   /* ── Risk levels ─────────────────────────────── */
   risk: {
-    low: '#00C48C',
-    lowBg: 'rgba(0, 196, 140, 0.10)',
-    medium: '#FBBF24',
-    mediumBg: 'rgba(251, 191, 36, 0.10)',
-    high: '#E63946',
-    highBg: 'rgba(230, 57, 70, 0.10)',
+    low: 'var(--color-profit, #10B981)',
+    lowBg: 'rgba(16, 185, 129, 0.10)',
+    medium: 'var(--color-warning, #F59E0B)',
+    mediumBg: 'rgba(245, 158, 11, 0.10)',
+    high: 'var(--color-loss, #EF4444)',
+    highBg: 'rgba(239, 68, 68, 0.10)',
   },
 
   /* ── Gradients (CSS string tokens) ──────────── */
   gradient: {
-    gold: 'linear-gradient(135deg, #22C55E 0%, #15803D 100%)',
-    goldSubtle: 'linear-gradient(135deg, rgba(34, 197, 94, 0.15) 0%, rgba(21, 128, 61, 0.05) 100%)',
-    premium: 'linear-gradient(135deg, #0A0F0C 0%, #060B08 50%, #020403 100%)',
+    gold: 'linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%)',
+    goldSubtle: 'linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%)',
+    premium: 'linear-gradient(135deg, var(--color-bg-primary) 0%, var(--color-bg-secondary) 50%, var(--color-bg-tertiary) 100%)',
     cardSheen: 'linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%)',
-    profitGlow: 'linear-gradient(135deg, rgba(34,197,94,0.12) 0%, rgba(34,197,94,0.02) 100%)',
+    profitGlow: 'linear-gradient(135deg, rgba(16,185,129,0.12) 0%, rgba(16,185,129,0.02) 100%)',
     lossGlow: 'linear-gradient(135deg, rgba(239,68,68,0.12) 0%, rgba(239,68,68,0.02) 100%)',
   },
 } as const;

@@ -60,7 +60,7 @@ export default function PositionCard({ position: pos, isFundamental }: Props) {
               animate={{ width: `${Math.min(pos.allocation_pct ?? 0, 100)}%` }}
               transition={{ duration: 0.7, ease: 'easeOut' }}
               className="h-full rounded-full"
-              style={{ background: 'linear-gradient(90deg, rgba(34,197,94,0.6), rgba(34,197,94,0.3))' }}
+              style={{ background: 'linear-gradient(90deg, var(--color-primary), var(--color-secondary, var(--color-primary)))' }}
             />
           </div>
         </div>
