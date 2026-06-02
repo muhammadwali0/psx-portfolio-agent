@@ -36,7 +36,7 @@ export default function CapitalInput({ value, onChange }: Props) {
           value={display}
           onChange={handleChange}
           placeholder="1,000,000"
-          className={`w-full pl-12 pr-4 py-3.5 rounded-xl bg-surface-secondary border text-base font-financial font-semibold text-psx-50 placeholder:text-psx-400 focus:outline-none focus:ring-1 focus:ring-psx-500/20 transition ${error ? 'border-loss/40' : 'border-psx-500/10'}`}
+          className={`w-full pl-12 pr-4 py-3.5 rounded-xl bg-surface-secondary border text-base font-financial font-semibold text-psx-50 placeholder:text-psx-400 focus:outline-none focus:ring-1 focus:ring-primary/30 transition ${error ? 'border-loss/40' : 'border-psx-500/30 dark:border-psx-500/10'}`}
         />
       </div>
       {error && <p className="mt-1 text-[10px] text-loss font-medium">{error}</p>}
@@ -47,7 +47,7 @@ export default function CapitalInput({ value, onChange }: Props) {
             key={p}
             type="button"
             onClick={() => { onChange(p); setDisplay(p.toLocaleString('en-PK')); setError(''); }}
-            className={`flex-1 py-2 rounded-lg text-[10px] font-semibold transition-colors ${value === p ? 'bg-psx-600 text-psx-50 border border-psx-500/20' : 'bg-psx-800 text-psx-300 border border-psx-500/10 hover:bg-psx-700/50'}`}
+            className={`flex-1 py-2 rounded-lg text-[10px] font-semibold transition-all duration-200 ${value === p ? 'bg-primary text-selected border border-primary/20 shadow-sm' : 'bg-psx-800 text-psx-300 border border-psx-500/30 dark:border-psx-500/10 hover:bg-psx-700/50'}`}
           >
             {p >= 1_000_000 ? `${p / 1_000_000}M` : `${p / 1_000}K`}
           </button>

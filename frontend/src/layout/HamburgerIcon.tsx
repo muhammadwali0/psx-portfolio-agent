@@ -7,17 +7,13 @@ interface Props {
 }
 
 export default function HamburgerIcon({ isOpen, onClick }: Props) {
-  const line = `absolute left-1/2 h-[1.5px] rounded-full transition-all duration-300 ${
-    isOpen ? 'bg-[#F8F9FA]' : 'bg-psx-50'
-  }`;
-  
+  const line = `absolute left-1/2 h-[1.5px] rounded-full transition-all duration-300 bg-psx-50`;
+
   return (
     <motion.button
       onClick={onClick}
       whileTap={{ scale: 0.9 }}
-      className={`relative w-11 h-11 flex items-center justify-center rounded-xl transition-colors z-[55] ${
-        isOpen ? 'hover:bg-white/10' : 'hover:bg-psx-600/50'
-      }`}
+      className={`relative w-11 h-11 flex items-center justify-center rounded-xl transition-colors z-[55] hover:bg-psx-500/10`}
       aria-label={isOpen ? 'Close menu' : 'Open menu'}
     >
       <div className="relative w-5 h-4">

@@ -5,6 +5,7 @@
  */
 import { jsPDF } from 'jspdf';
 import type { AgentRun } from '../api/types';
+import { mapSector } from './sectorMapper';
 
 const GOLD = '#22C55E';
 const BG = '#0B0B0C';
@@ -32,6 +33,11 @@ export function generatePortfolioPDF(run: AgentRun): jsPDF {
   const cw = pw - margin * 2; // content width
   let y = 0;
 
+  const portfolio = run?.portfolio;
+  const isShariah = !!portfolio?.shariah_compliant;
+  // Conventional: Blue [59, 130, 246], Shariah: Gold [212, 175, 55]
+  const primaryRGB: [number, number, number] = isShariah ? [212, 175, 55] : [59, 130, 246];
+
   // ── Page background ─────────────────────────────────────
   const setPageBg = () => {
     pdf.setFillColor(11, 11, 12);
@@ -42,7 +48,7 @@ export function generatePortfolioPDF(run: AgentRun): jsPDF {
   // ── Header ──────────────────────────────────────────────
   y = 25;
   pdf.setFontSize(8);
-  pdf.setTextColor(34, 197, 94);
+  pdf.setTextColor(...primaryRGB);
   pdf.text('PSX PORTFOLIO AGENT', margin, y);
   pdf.setTextColor(113, 113, 122);
   pdf.text('AI Investment Report', pw - margin, y, { align: 'right' });
@@ -66,7 +72,6 @@ export function generatePortfolioPDF(run: AgentRun): jsPDF {
   });
   pdf.text(`Generated: ${dateStr}`, margin, y);
 
-  const portfolio = run?.portfolio;
   if (!portfolio) {
     y += 20;
     pdf.setFontSize(12);
@@ -76,18 +81,18 @@ export function generatePortfolioPDF(run: AgentRun): jsPDF {
   }
 
   if (portfolio.shariah_compliant) {
-    pdf.setTextColor(45, 159, 111);
+    pdf.setTextColor(...primaryRGB);
     pdf.text('Shariah Compliant', pw - margin, y, { align: 'right' });
   }
 
   // ── Summary Section ─────────────────────────────────────
   y += 14;
   pdf.setFontSize(10);
-  pdf.setTextColor(34, 197, 94);
+  pdf.setTextColor(...primaryRGB);
   pdf.text('PORTFOLIO SUMMARY', margin, y);
 
   y += 3;
-  pdf.setDrawColor(34, 197, 94);
+  pdf.setDrawColor(...primaryRGB);
   pdf.setLineWidth(0.5);
   pdf.line(margin, y, margin + 30, y);
 
@@ -127,11 +132,11 @@ export function generatePortfolioPDF(run: AgentRun): jsPDF {
   // ── Allocation Table ────────────────────────────────────
   y += 16;
   pdf.setFontSize(10);
-  pdf.setTextColor(34, 197, 94);
+  pdf.setTextColor(...primaryRGB);
   pdf.text('ALLOCATION BREAKDOWN', margin, y);
 
   y += 3;
-  pdf.setDrawColor(34, 197, 94);
+  pdf.setDrawColor(...primaryRGB);
   pdf.setLineWidth(0.5);
   pdf.line(margin, y, margin + 38, y);
 
@@ -159,7 +164,7 @@ export function generatePortfolioPDF(run: AgentRun): jsPDF {
     }
 
     const ticker = pos.ticker ?? 'N/A';
-    const sector = pos.sector ?? 'N/A';
+    const sector = mapSector(pos.sector) ?? 'N/A';
     const allocation = pos.allocation_pct ?? 0;
     const capital = pos.capital_pkr ?? 0;
     const entry = pos.entry_price ?? 0;
@@ -188,10 +193,10 @@ export function generatePortfolioPDF(run: AgentRun): jsPDF {
     y = 25;
   }
   pdf.setFontSize(10);
-  pdf.setTextColor(34, 197, 94);
+  pdf.setTextColor(...primaryRGB);
   pdf.text('RISK PROFILE', margin, y);
   y += 3;
-  pdf.setDrawColor(34, 197, 94);
+  pdf.setDrawColor(...primaryRGB);
   pdf.setLineWidth(0.5);
   pdf.line(margin, y, margin + 22, y);
 
@@ -222,10 +227,10 @@ export function generatePortfolioPDF(run: AgentRun): jsPDF {
       y = 25;
     }
     pdf.setFontSize(10);
-    pdf.setTextColor(34, 197, 94);
+    pdf.setTextColor(...primaryRGB);
     pdf.text('AI REASONING', margin, y);
     y += 3;
-    pdf.setDrawColor(34, 197, 94);
+    pdf.setDrawColor(...primaryRGB);
     pdf.setLineWidth(0.5);
     pdf.line(margin, y, margin + 22, y);
 

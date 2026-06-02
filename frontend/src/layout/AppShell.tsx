@@ -21,7 +21,10 @@ export default function AppShell({ children }: Props) {
   const { drawerOpen, toggleDrawer, activeScreen, shariahMode } = useStore();
 
   return (
-    <div className="min-h-screen min-h-[100dvh] bg-surface-primary text-psx-50">
+    <div className="min-h-screen min-h-[100dvh] bg-surface-primary text-psx-50 relative overflow-hidden">
+      {/* Premium background layer */}
+      <div className="main-bg-layer" />
+
       {/* Hamburger button outside header to be above Drawer (z-[55]) */}
       <div className="fixed top-0 left-2 z-[55] safe-top h-14 flex items-center justify-center">
         <HamburgerIcon isOpen={drawerOpen} onClick={toggleDrawer} />
@@ -43,15 +46,6 @@ export default function AppShell({ children }: Props) {
             <h1 className="text-[13px] font-heading font-bold tracking-tight">
               {SCREEN_TITLES[activeScreen]}
             </h1>
-            {activeScreen === 'dashboard' && (
-              <div className="flex items-center gap-1.5 ml-1">
-                <div className="relative w-1.5 h-1.5">
-                  <div className="absolute inset-0 rounded-full bg-profit animate-pulse-subtle" />
-                  <div className="absolute inset-0 rounded-full bg-profit pulse-live" />
-                </div>
-                <span className="text-[9px] font-medium text-profit uppercase tracking-wider">Live</span>
-              </div>
-            )}
           </motion.div>
 
           {/* Right side — Shariah indicator or spacer */}
@@ -73,7 +67,7 @@ export default function AppShell({ children }: Props) {
       <Drawer />
 
       {/* Screen content */}
-      <main className="pt-14 safe-top safe-bottom">
+      <main className="pt-14 safe-top safe-bottom px-4 md:px-6 lg:px-8 max-w-5xl mx-auto w-full relative z-10">
         <AnimatePresence mode="wait">
           <motion.div
             key={activeScreen}

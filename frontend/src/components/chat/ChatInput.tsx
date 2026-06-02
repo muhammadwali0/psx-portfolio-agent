@@ -44,7 +44,7 @@ export default function ChatInput({ onSend, loading }: Props) {
         onKeyDown={handleKeyDown}
         placeholder="Ask about PSX markets…"
         rows={1}
-        className="flex-1 resize-none bg-surface-secondary border border-psx-500/10 rounded-xl px-4 py-3 text-[13px] text-psx-50 placeholder:text-psx-300 focus:outline-none focus:ring-1 focus:ring-psx-500/20 transition max-h-[120px]"
+        className="flex-1 resize-none bg-surface-secondary border border-psx-500/30 dark:border-psx-500/10 rounded-xl px-4 py-3 text-[13px] text-psx-50 placeholder:text-psx-300 focus:outline-none focus:ring-1 focus:ring-primary/30 transition max-h-[120px]"
         style={{ height: 'auto' }}
       />
       <motion.button
@@ -53,10 +53,8 @@ export default function ChatInput({ onSend, loading }: Props) {
         disabled={!text.trim() || loading}
         className={`w-11 h-11 rounded-xl flex items-center justify-center transition-colors ${
           text.trim() && !loading
-            ? shariahMode
-              ? 'bg-shariah text-white shadow-sm shadow-shariah/10'
-              : 'btn-gold text-surface-primary'
-            : 'bg-psx-500/10 text-psx-300'
+            ? 'bg-primary text-selected shadow-sm hover:brightness-105'
+            : 'bg-psx-500/10 text-psx-300 border border-psx-500/30 dark:border-psx-500/10'
         }`}
       >
         <Send className="w-4 h-4" />

@@ -2,6 +2,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { LayoutDashboard, PieChart, Newspaper, MessageSquare, Settings } from 'lucide-react';
 import { useStore, type ScreenName } from '../store/store';
 import { spring } from '../design/animationTokens';
+import logoImg from '../assets/logo.png';
 
 const NAV_ITEMS: { id: ScreenName; label: string; icon: typeof LayoutDashboard }[] = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -36,27 +37,20 @@ export default function Drawer() {
             transition={spring.gentle}
             className="fixed top-0 left-0 bottom-0 w-[280px] z-50 flex flex-col safe-top"
             style={{
-              background: 'linear-gradient(180deg, rgba(17,17,20,0.97) 0%, rgba(11,11,12,0.99) 100%)',
+              background: 'linear-gradient(180deg, var(--drawer-bg-start) 0%, var(--drawer-bg-end) 100%)',
               backdropFilter: 'blur(32px) saturate(200%)',
               WebkitBackdropFilter: 'blur(32px) saturate(200%)',
-              borderRight: '1px solid rgba(255,255,255,0.06)',
+              borderRight: '1px solid var(--drawer-border)',
             }}
           >
             {/* Header with premium branding */}
             <div className="pl-14 pr-6 pt-6 pb-4">
               <div className="flex items-center gap-3 mb-1">
-                <div
-                  className="w-9 h-9 rounded-xl flex items-center justify-center font-heading font-bold text-sm relative overflow-hidden"
-                  style={{
-                    background: shariahMode
-                      ? 'rgba(45, 159, 111, 0.12)'
-                      : 'linear-gradient(135deg, rgba(34,197,94,0.12) 0%, rgba(34,197,94,0.04) 100%)',
-                    border: `1px solid ${shariahMode ? 'rgba(45,159,111,0.15)' : 'rgba(34,197,94,0.15)'}`,
-                    color: shariahMode ? '#4ADE80' : '#22C55E',
-                  }}
-                >
-                  P
-                </div>
+                <img
+                  src={logoImg}
+                  alt="PSX Logo"
+                  className="w-9 h-9 object-contain rounded-xl"
+                />
                 <div>
                   <h2 className="text-sm font-heading font-bold text-psx-50">PSX Agent</h2>
                   <p className="text-[10px] text-psx-300">AI Investment Intelligence</p>
@@ -82,20 +76,18 @@ export default function Drawer() {
                     className={`
                       w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all duration-200
                       ${isActive
-                        ? shariahMode
-                          ? 'bg-shariah/10 text-shariah-light border border-shariah/10'
-                          : 'bg-gold/10 text-gold border border-gold/20'
+                        ? 'bg-primary/10 text-primary border border-primary/20'
                         : 'text-psx-200 hover:bg-psx-500/10 hover:text-psx-100 border border-transparent'
                       }
                     `}
                   >
-                    <Icon className={`w-[18px] h-[18px] ${isActive ? (shariahMode ? 'text-shariah-light' : 'text-psx-50') : 'text-psx-300'}`} />
+                    <Icon className={`w-[18px] h-[18px] ${isActive ? 'text-primary' : 'text-psx-300'}`} />
                     <span className="text-[13px] font-semibold">{item.label}</span>
                     {isActive && (
                       <motion.div
                         layoutId="nav-indicator"
                         className="ml-auto w-1.5 h-1.5 rounded-full"
-                        style={{ background: shariahMode ? '#4ADE80' : '#22C55E' }}
+                        style={{ background: 'var(--color-primary)' }}
                         transition={spring.snappy}
                       />
                     )}

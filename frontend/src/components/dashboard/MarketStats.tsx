@@ -1,6 +1,7 @@
 import { BarChart3, Wallet, Layers } from 'lucide-react';
 import GlassCard from '../shared/GlassCard';
 import type { MarketSnapshot, PrecomputedAggregates } from '../../api/types';
+import { mapSector } from '../../utils/sectorMapper';
 
 interface Props {
   snapshot: MarketSnapshot | null;
@@ -54,7 +55,7 @@ export default function MarketStats({ snapshot, aggregates }: Props) {
                   className="flex items-center justify-between py-2 px-3 rounded-xl bg-surface-secondary border border-psx-500/10 hover:border-psx-500/25 transition-colors"
                 >
                   <div className="flex items-center gap-2 min-w-0">
-                    <span className="text-[11px] font-medium text-psx-100 truncate">{sp.sector}</span>
+                    <span className="text-[11px] font-medium text-psx-100 truncate">{mapSector(sp.sector)}</span>
                     <span className="text-[9px] text-psx-200">{sp.symbol_count} stocks</span>
                   </div>
                   <span className={`text-[11px] font-financial font-semibold ${isUp ? 'text-profit' : 'text-loss'}`}>

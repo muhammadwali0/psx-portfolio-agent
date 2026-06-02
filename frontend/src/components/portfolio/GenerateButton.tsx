@@ -18,14 +18,12 @@ export default function GenerateButton({ onClick, loading }: Props) {
         relative w-full py-4 rounded-2xl font-heading font-bold text-[15px] transition-all duration-300 overflow-hidden
         ${loading
           ? 'bg-psx-500 cursor-not-allowed text-psx-300'
-          : shariahMode
-            ? 'bg-gradient-to-r from-shariah to-green-400 text-surface-primary shadow-lg shadow-shariah/20'
-            : 'btn-gold'
+          : 'bg-gradient-to-r from-primary to-secondary text-selected shadow-lg shadow-primary/10 hover:brightness-105'
         }
       `}
     >
-      {/* Shimmer overlay for gold button */}
-      {!loading && !shariahMode && (
+      {/* Shimmer overlay for premium button */}
+      {!loading && (
         <div className="absolute inset-0 shimmer-gold-overlay pointer-events-none" />
       )}
 

@@ -51,10 +51,10 @@ export default function SettingsScreen() {
               <span className="text-[10px] font-semibold text-psx-300 uppercase">
                 {theme === 'dark' ? 'Dark' : 'Light'}
               </span>
-              <div className="w-9 h-9 rounded-xl bg-psx-850 border border-psx-500/10 flex items-center justify-center">
+              <div className="w-9 h-9 rounded-xl bg-psx-800 border border-psx-500/10 flex items-center justify-center">
                 {theme === 'dark'
                   ? <Moon className="w-4 h-4 text-psx-200" />
-                  : <Sun className="w-4 h-4 text-gold" />
+                  : <Sun className="w-4 h-4 text-primary" />
                 }
               </div>
             </div>
